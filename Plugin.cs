@@ -96,7 +96,10 @@ namespace MinimapMarkerModifier
 			{
 				var componentNode = iconNodeList->Component->UldManager.NodeList[i]->GetAsAtkComponentNode();
 				if (componentNode == null) continue;
+				var collisionNode = componentNode->Component->UldManager.SearchNodeById(7);
 				var iconNode = componentNode->Component->GetImageNodeById(3);
+				var heightMarkerNode = componentNode->Component->GetImageNodeById(2);
+				if (collisionNode is null || iconNode is null || heightMarkerNode is null) continue;
 				var imageNode = iconNode->GetAsAtkImageNode();
 
 				for (var j = 0; j < imageNode->PartsList->PartCount; j++)
@@ -108,10 +111,20 @@ namespace MinimapMarkerModifier
 					{
 						case 60443: // player marker
 						case 60457: // map transition
+						case 60495: // quest radius marker
+						case 60496: // quest radius marker
+						case 60497: // quest radius marker
+						case 60498: // quest radius marker
+							SetScale(collisionNode, 1.0f);
+							collisionNode->SetPositionFloat(0, 0);
+							SetScale(iconNode, 1.0f);
 							continue;
 
 						default:
+							SetScale(collisionNode, Config.MinimapIconScale);
+							collisionNode->SetPositionFloat((1 - Config.MinimapIconScale) * 16, (1 - Config.MinimapIconScale) * 16);
 							SetScale(iconNode, Config.MinimapIconScale);
+							SetScale(heightMarkerNode, Config.MinimapIconScale);
 							break;
 					}
 				}
