@@ -26,7 +26,7 @@ public class ConfigWindow : Window, IDisposable
 	public override void Draw()
 	{
 		var enableResizing = Config.EnableResizing;
-		var iconScale = Config.MinimapIconScale;
+		var iconScale = (int)(Config.MinimapIconScale * 100);
 
 		var changed = false;
 
@@ -40,9 +40,9 @@ public class ConfigWindow : Window, IDisposable
 		}
 		if (enableResizing)
 		{
-			if (changed |= ImGui.SliderFloat("Icon Scale", ref iconScale, 0.25f, 2.0f))
+			if (changed |= ImGui.SliderInt("Icon Scale Percent", ref iconScale, 25, 200))
 			{
-				Config.MinimapIconScale = iconScale;
+				Config.MinimapIconScale = iconScale / 100.0f;
 			}
 		}
 		if (changed)
