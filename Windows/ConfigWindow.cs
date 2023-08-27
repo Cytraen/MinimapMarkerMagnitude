@@ -33,13 +33,9 @@ public class ConfigWindow : Window, IDisposable
 		if (changed |= ImGui.Checkbox($"Resize Minimap Markers{new string(' ', 24)}", ref enableResizing))
 		{
 			Config.EnableResizing = enableResizing;
-			if (enableResizing)
+			if (!enableResizing)
 			{
-				Plugin.EnablePlugin();
-			}
-			else
-			{
-				Plugin.DisablePlugin();
+				Plugin.ResizeIcons(true);
 			}
 		}
 		if (enableResizing)

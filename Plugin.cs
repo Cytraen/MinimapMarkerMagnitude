@@ -1,5 +1,4 @@
 using Dalamud.Game;
-using Dalamud.Game.ClientState;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
 using Dalamud.Interface.Windowing;
@@ -16,11 +15,10 @@ namespace MinimapMarkerModifier
 		private const string ConfigWindowCommandName = "/mmm";
 
 		private readonly WindowSystem WindowSystem = new("MinimapMarkerModifier");
-		private Framework Framework { get; }
+		private AddonNaviMapUpdateHook AddonHook { get; }
 		private GameGui GameGui { get; }
 		private DalamudPluginInterface PluginInterface { get; }
 		private CommandManager CommandManager { get; }
-		private ClientState ClientState { get; }
 		private ConfigWindow ConfigWindow { get; }
 		private ChatGui ChatGui { get; }
 		public Configuration Config { get; }
@@ -30,14 +28,11 @@ namespace MinimapMarkerModifier
 			[RequiredVersion("1.0")] GameGui gameGui,
 			[RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
 			[RequiredVersion("1.0")] CommandManager commandManager,
-			[RequiredVersion("1.0")] ClientState clientState,
 			[RequiredVersion("1.0")] ChatGui chatGui)
 		{
-			Framework = framework;
 			GameGui = gameGui;
 			PluginInterface = pluginInterface;
 			CommandManager = commandManager;
-			ClientState = clientState;
 			ChatGui = chatGui;
 
 			Config = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
@@ -55,35 +50,10 @@ namespace MinimapMarkerModifier
 			PluginInterface.UiBuilder.Draw += DrawUI;
 			PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
 
-			if (Config.EnableResizing)
-			{
-				EnablePlugin();
-			}
+			AddonHook = new AddonNaviMapUpdateHook(this);
 		}
 
-		internal void EnablePlugin()
-		{
-			Framework.Update -= MinimapTick;
-			Framework.Update += MinimapTick;
-		}
-
-		internal void DisablePlugin()
-		{
-			Framework.Update -= MinimapTick;
-			ResizeIcons(true);
-		}
-
-		private void MinimapTick(Framework framework)
-		{
-			ResizeIcons();
-		}
-
-		private unsafe void SetScale(AtkResNode* node, float scale)
-		{
-			node->SetScale(scale, scale);
-		}
-
-		private unsafe void ResizeIcons(bool reset = false)
+		internal unsafe void ResizeIcons(bool reset = false)
 		{
 			var unitBase = (AtkUnitBase*)GameGui.GetAddonByName("_NaviMap");
 			if (unitBase == null) return;
@@ -101,34 +71,30 @@ namespace MinimapMarkerModifier
 				var heightMarkerNode = componentNode->Component->GetImageNodeById(2);
 				if (collisionNode is null || iconNode is null || heightMarkerNode is null) continue;
 				var imageNode = iconNode->GetAsAtkImageNode();
+				if (imageNode is null) continue;
 
 				for (var j = 0; j < imageNode->PartsList->PartCount; j++)
 				{
 					var iconId = GetTexPathHash(imageNode->PartsList->Parts[j].UldAsset);
 					if (iconId == null || iconId == -1) continue;
-					if (reset) { SetScale(iconNode, 1.0f); continue; }
-					switch (iconId)
-					{
-						case 60443: // player marker
-						case 60457: // map transition
-						case 60495: // quest radius marker
-						case 60496: // quest radius marker
-						case 60497: // quest radius marker
-						case 60498: // quest radius marker
-							SetScale(collisionNode, 1.0f);
-							collisionNode->SetPositionFloat(0, 0);
-							SetScale(iconNode, 1.0f);
-							continue;
 
-						default:
-							SetScale(collisionNode, Config.MinimapIconScale);
-							collisionNode->SetPositionFloat((1 - Config.MinimapIconScale) * 16, (1 - Config.MinimapIconScale) * 16);
-							SetScale(iconNode, Config.MinimapIconScale);
-							SetScale(heightMarkerNode, Config.MinimapIconScale);
-							break;
+					if (reset)
+					{
+						SetScale(collisionNode, iconNode, heightMarkerNode, 1.0f);
+						continue;
 					}
+
+					SetScale(collisionNode, iconNode, heightMarkerNode, IconMap(iconId.Value));
 				}
 			}
+		}
+
+		private unsafe void SetScale(AtkResNode* collisionNode, AtkResNode* iconNode, AtkResNode* heightMarkerNode, float scale)
+		{
+			iconNode->SetScale(scale, scale);
+			heightMarkerNode->SetScale(scale, scale);
+			collisionNode->SetScale(scale, scale);
+			collisionNode->SetPositionFloat((1 - scale) * 16, (1 - scale) * 16);
 		}
 
 		private unsafe int? GetTexPathHash(AtkUldAsset* uldAsset)
@@ -147,7 +113,7 @@ namespace MinimapMarkerModifier
 			PluginInterface.UiBuilder.Draw -= DrawUI;
 			PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
 
-			DisablePlugin();
+			AddonHook.Dispose();
 		}
 
 		private void OnConfigWindowCommand(string command, string args)
@@ -168,7 +134,6 @@ namespace MinimapMarkerModifier
 						ChatGui.Print("Minimap Marker Modifier now enabled.");
 						Config.EnableResizing = true;
 						Config.Save();
-						EnablePlugin();
 					}
 					break;
 
@@ -178,7 +143,6 @@ namespace MinimapMarkerModifier
 						ChatGui.Print("Minimap Marker Modifier now disabled.");
 						Config.EnableResizing = false;
 						Config.Save();
-						DisablePlugin();
 					}
 					else
 					{
@@ -201,5 +165,15 @@ namespace MinimapMarkerModifier
 		{
 			ConfigWindow.IsOpen = true;
 		}
+
+		internal float IconMap(int iconId) => iconId switch
+		{
+			(>= 60409) and (<= 60411) => 1.0f,  // quest search areas
+			(>= 60421) and (<= 60424) => 1.0f,  // party members, enemies
+			60443 => 1.0f,                      // player marker
+			60457 => 1.0f,                      // map transition
+			(>= 60495) and (<= 60498) => 1.0f,  // more quest search areas
+			_ => Config.MinimapIconScale,
+		};
 	}
 }
