@@ -1,1 +1,1 @@
-# MinimapMarkerModifier
+# MinimapMarkerMagnitude

@@ -2,7 +2,7 @@ using Dalamud.Hooking;
 using Dalamud.Logging;
 using Dalamud.Utility.Signatures;
 
-namespace MinimapMarkerModifier;
+namespace MinimapMarkerMagnitude;
 
 public unsafe class AddonNaviMapUpdateHook : IDisposable
 {

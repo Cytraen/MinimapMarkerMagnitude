@@ -2,7 +2,7 @@ using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System.Numerics;
 
-namespace MinimapMarkerModifier.Windows;
+namespace MinimapMarkerMagnitude.Windows;
 
 public class ConfigWindow : Window, IDisposable
 {
@@ -10,7 +10,7 @@ public class ConfigWindow : Window, IDisposable
 	private Configuration Config;
 
 	public ConfigWindow(Plugin plugin) : base(
-		"Minimap Marker Modifier Settings",
+		"Minimap Marker Magnitude Settings",
 		ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
 	{
 		Size = new Vector2(0, 0);

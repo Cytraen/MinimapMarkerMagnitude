@@ -5,16 +5,16 @@ using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using MinimapMarkerModifier.Windows;
+using MinimapMarkerMagnitude.Windows;
 
-namespace MinimapMarkerModifier
+namespace MinimapMarkerMagnitude
 {
 	public sealed class Plugin : IDalamudPlugin
 	{
-		public string Name => "Minimap Marker Modifier";
+		public string Name => "Minimap Marker Magnitude";
 		private const string ConfigWindowCommandName = "/mmm";
 
-		private readonly WindowSystem WindowSystem = new("MinimapMarkerModifier");
+		private readonly WindowSystem WindowSystem = new("MinimapMarkerMagnitude");
 		private AddonNaviMapUpdateHook AddonHook { get; }
 		private GameGui GameGui { get; }
 		private DalamudPluginInterface PluginInterface { get; }
@@ -44,7 +44,7 @@ namespace MinimapMarkerModifier
 
 			CommandManager.AddHandler(ConfigWindowCommandName, new CommandInfo(OnConfigWindowCommand)
 			{
-				HelpMessage = "Opens the Minimap Marker Modifier config window."
+				HelpMessage = "Opens the Minimap Marker Magnitude config window."
 			});
 
 			PluginInterface.UiBuilder.Draw += DrawUI;
@@ -127,11 +127,11 @@ namespace MinimapMarkerModifier
 				case "enable" or "on":
 					if (Config.EnableResizing)
 					{
-						ChatGui.Print("Minimap Marker Modifier was already enabled.");
+						ChatGui.Print("Minimap Marker Magnitude was already enabled.");
 					}
 					else
 					{
-						ChatGui.Print("Minimap Marker Modifier now enabled.");
+						ChatGui.Print("Minimap Marker Magnitude now enabled.");
 						Config.EnableResizing = true;
 						Config.Save();
 					}
@@ -140,13 +140,13 @@ namespace MinimapMarkerModifier
 				case "disable" or "off":
 					if (Config.EnableResizing)
 					{
-						ChatGui.Print("Minimap Marker Modifier now disabled.");
+						ChatGui.Print("Minimap Marker Magnitude now disabled.");
 						Config.EnableResizing = false;
 						Config.Save();
 					}
 					else
 					{
-						ChatGui.Print("Minimap Marker Modifier was already disabled.");
+						ChatGui.Print("Minimap Marker Magnitude was already disabled.");
 					}
 					break;
 

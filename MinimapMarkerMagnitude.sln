@@ -2,7 +2,7 @@
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34018.315
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimapMarkerModifier", "MinimapMarkerModifier.csproj", "{C5967595-2972-4742-8B26-BA97676572EE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimapMarkerMagnitude", "MinimapMarkerMagnitude.csproj", "{C5967595-2972-4742-8B26-BA97676572EE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

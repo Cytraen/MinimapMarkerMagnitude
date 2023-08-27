@@ -1,7 +1,7 @@
 using Dalamud.Configuration;
 using Dalamud.Plugin;
 
-namespace MinimapMarkerModifier
+namespace MinimapMarkerMagnitude
 {
 	[Serializable]
 	public class Configuration : IPluginConfiguration
@@ -11,6 +11,10 @@ namespace MinimapMarkerModifier
 		public bool EnableResizing { get; set; } = true;
 
 		public float MinimapIconScale { get; set; } = 1.0f;
+
+		public bool QuestOverride { get; set; } = false;
+
+		public float QuestMarkerScale { get; set; } = 1.0f;
 
 		[NonSerialized]
 		private DalamudPluginInterface? PluginInterface;

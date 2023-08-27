@@ -1,9 +1,9 @@
 {
 	"Author": "Cytraen",
-	"Name": "Minimap Marker Modifier",
+	"Name": "Minimap Marker Magnitude",
 	"Punchline": "Modify the magitude of your minimap's icons!",
 	"Description": "",
-	"InternalName": "MinimapMarkerModifier",
+	"InternalName": "MinimapMarkerMagnitude",
 	"ApplicableVersion": "any",
 	"Tags": []
 }
