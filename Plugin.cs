@@ -1,4 +1,4 @@
-using Dalamud.Game;
+using Dalamud.Game.ClientState;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
 using Dalamud.Interface.Windowing;
@@ -15,24 +15,26 @@ namespace MinimapMarkerMagnitude
 		private const string ConfigWindowCommandName = "/mmm";
 
 		private readonly WindowSystem WindowSystem = new("MinimapMarkerMagnitude");
-		private AddonNaviMapUpdateHook AddonHook { get; }
+		private AddonNaviMapUpdateHook? AddonHook { get; set; }
 		private GameGui GameGui { get; }
 		private DalamudPluginInterface PluginInterface { get; }
 		private CommandManager CommandManager { get; }
+		private ClientState ClientState { get; }
 		private ConfigWindow ConfigWindow { get; }
 		private ChatGui ChatGui { get; }
 		public Configuration Config { get; }
 
 		public Plugin(
-			[RequiredVersion("1.0")] Framework framework,
 			[RequiredVersion("1.0")] GameGui gameGui,
 			[RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
 			[RequiredVersion("1.0")] CommandManager commandManager,
+			[RequiredVersion("1.0")] ClientState clientState,
 			[RequiredVersion("1.0")] ChatGui chatGui)
 		{
 			GameGui = gameGui;
 			PluginInterface = pluginInterface;
 			CommandManager = commandManager;
+			ClientState = clientState;
 			ChatGui = chatGui;
 
 			Config = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
@@ -50,22 +52,36 @@ namespace MinimapMarkerMagnitude
 			PluginInterface.UiBuilder.Draw += DrawUI;
 			PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
 
-			AddonHook = new AddonNaviMapUpdateHook(this);
+			ClientState.Login += Login;
+			ClientState.Logout += Logout;
+
+			if (ClientState.IsLoggedIn)
+			{
+				AddonHook ??= new AddonNaviMapUpdateHook(this);
+			}
+		}
+
+		private void Login(object? sender, EventArgs e)
+		{
+			AddonHook ??= new AddonNaviMapUpdateHook(this);
+		}
+
+		private void Logout(object? sender, EventArgs e)
+		{
+			AddonHook?.Dispose();
 		}
 
 		internal unsafe void ResizeIcons(bool reset = false)
 		{
 			var unitBase = (AtkUnitBase*)GameGui.GetAddonByName("_NaviMap");
-			if (unitBase == null) return;
-
+			if (unitBase is null) return;
 			if (unitBase->UldManager.NodeListCount < 19) return;
-
 			var iconNodeList = unitBase->GetNodeById(18)->GetAsAtkComponentNode();
 
 			for (var i = 0; i < iconNodeList->Component->UldManager.NodeListCount; i++)
 			{
 				var componentNode = iconNodeList->Component->UldManager.NodeList[i]->GetAsAtkComponentNode();
-				if (componentNode == null) continue;
+				if (componentNode is null) continue;
 				var collisionNode = componentNode->Component->UldManager.SearchNodeById(7);
 				var iconNode = componentNode->Component->GetImageNodeById(3);
 				var heightMarkerNode = componentNode->Component->GetImageNodeById(2);
@@ -75,8 +91,8 @@ namespace MinimapMarkerMagnitude
 
 				for (var j = 0; j < imageNode->PartsList->PartCount; j++)
 				{
-					var iconId = GetTexPathHash(imageNode->PartsList->Parts[j].UldAsset);
-					if (iconId == null || iconId == -1) continue;
+					var iconId = GetIconId(imageNode->PartsList->Parts[j].UldAsset);
+					if (iconId is null || iconId == -1) continue;
 
 					if (reset)
 					{
@@ -97,7 +113,7 @@ namespace MinimapMarkerMagnitude
 			collisionNode->SetPositionFloat((1 - scale) * 16, (1 - scale) * 16);
 		}
 
-		private unsafe int? GetTexPathHash(AtkUldAsset* uldAsset)
+		private unsafe int? GetIconId(AtkUldAsset* uldAsset)
 		{
 			var res = uldAsset->AtkTexture.Resource;
 			if (res is null) return null;
@@ -113,7 +129,10 @@ namespace MinimapMarkerMagnitude
 			PluginInterface.UiBuilder.Draw -= DrawUI;
 			PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
 
-			AddonHook.Dispose();
+			ClientState.Login -= Login;
+			ClientState.Logout -= Logout;
+
+			AddonHook?.Dispose();
 		}
 
 		private void OnConfigWindowCommand(string command, string args)
