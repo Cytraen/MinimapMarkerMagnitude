@@ -22,6 +22,10 @@
 		<PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
 	</PropertyGroup>
 
+	<ItemGroup Condition="'$(Configuration)' == 'Debug'">
+		<None Update="icon.png" CopyToOutputDirectory="PreserveNewest" TargetPath="images\%(Filename)%(Extension)" />
+	</ItemGroup>
+
 	<PropertyGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))'">
 		<DalamudLibPath>$(DALAMUD_HOME)/</DalamudLibPath>
 	</PropertyGroup>

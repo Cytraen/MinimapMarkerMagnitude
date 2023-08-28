@@ -1,0 +1,10 @@
+name: Minimap Marker Magnitude
+author: Cytraen
+punchline: Modify the magitude of your minimap's markers!
+description: Changes the size of your minimap's icons.
+repo_url: https://github.com/Cytraen/MinimapMarkerMagnitude
+accepts_feedback: true
+tags:
+  - utility
+category_tags:
+  - Utility
