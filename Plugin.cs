@@ -1,3 +1,4 @@
+using Dalamud.Game;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
@@ -21,6 +22,7 @@ internal sealed class Plugin : IDalamudPlugin
 	private readonly ConfigWindow _configWindow;
 
 	public Plugin(
+		[RequiredVersion("1.0")] ISigScanner sigScanner,
 		[RequiredVersion("1.0")] GameGui gameGui,
 		[RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
 		[RequiredVersion("1.0")] ClientState clientState,
@@ -34,7 +36,7 @@ internal sealed class Plugin : IDalamudPlugin
 		var config = _pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 		config.Initialize(_pluginInterface);
 
-		_addonHook = new AddonNaviMapUpdateHook(config, gameGui);
+		_addonHook = new AddonNaviMapUpdateHook(sigScanner, config, gameGui);
 
 		_configWindow = new ConfigWindow(config, _addonHook);
 
