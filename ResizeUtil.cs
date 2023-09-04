@@ -1,4 +1,5 @@
 using Dalamud.Game.Gui;
+using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace MinimapMarkerMagnitude;
@@ -26,24 +27,45 @@ internal class ResizeUtil
 			var componentNode = iconNodeList->Component->UldManager.NodeList[i]->GetAsAtkComponentNode();
 			if (componentNode is null) continue;
 			var collisionNode = componentNode->Component->UldManager.SearchNodeById(7);
+			var offScreenArrow = componentNode->Component->GetImageNodeById(4);
 			var iconNode = componentNode->Component->GetImageNodeById(3);
 			var heightMarkerNode = componentNode->Component->GetImageNodeById(2);
 			if (collisionNode is null || iconNode is null || heightMarkerNode is null) continue;
 			var imageNode = iconNode->GetAsAtkImageNode();
 			if (imageNode is null) continue;
 
-			for (var j = 0; j < imageNode->PartsList->PartCount; j++)
+			if (imageNode->PartsList->PartCount == 0)
 			{
-				var iconId = GetIconId(imageNode->PartsList->Parts[j].UldAsset);
-				if (iconId is null or -1) continue;
+				PluginLog.Warning("AtkImageNode had no parts");
+			}
 
-				if (reset)
+			if (GetIconId(imageNode->PartsList->Parts[0].UldAsset) is not { } iconId || iconId == -1)
+			{
+				if (imageNode->PartsList->PartCount != 1)
 				{
-					SetScale(collisionNode, iconNode, heightMarkerNode, 1.0f);
-					continue;
+					PluginLog.Warning("More than 1 part and iconId was not -1");
+				}
+				continue;
+			}
+
+			if (reset)
+			{
+				SetScale(collisionNode, iconNode, heightMarkerNode, 1.0f);
+				continue;
+			}
+
+			if (_config.EnableOffMapResizing && offScreenArrow is not null)
+			{
+				if (!offScreenArrow->IsVisible)
+				{
+					PluginLog.Warning("Found non-visible arrow");
 				}
 
-				SetScale(collisionNode, iconNode, heightMarkerNode, IconMap(iconId.Value));
+				SetScale(collisionNode, iconNode, heightMarkerNode, _config.OffMapIconScale);
+			}
+			else
+			{
+				SetScale(collisionNode, iconNode, heightMarkerNode, IconMap(iconId));
 			}
 		}
 	}
@@ -70,6 +92,7 @@ internal class ResizeUtil
 		60443 => 1.0f,                  // player marker
 		60457 => 1.0f,                  // map transition
 		>= 60495 and <= 60498 => 1.0f,  // more quest search areas
+		60961 => 1.0f,                  // pet marker
 		_ => _config.MinimapIconScale,
 	};
 }
