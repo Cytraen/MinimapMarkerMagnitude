@@ -29,8 +29,15 @@ internal class ConfigWindow : Window, IDisposable
 	{
 		var enableResizing = _config.EnableResizing;
 		var iconScale = (float)(Math.Pow(_config.MinimapIconScale, 2f) * 100f);
+
 		var resizeOffMapIcons = _config.ResizeOffMapIcons;
 		var offMapIconScale = (float)(Math.Pow(_config.OffMapIconScalar * 0.625f, 2f) * 100f);
+
+		var overridePlayerMarker = _config.OverridePlayerMarker;
+		var playerMarkerScale = (float)(Math.Pow(_config.PlayerMarkerScale, 2f) * 100f);
+
+		var overrideAllyMarkers = _config.OverrideAllyMarkers;
+		var allyMarkerScale = (float)(Math.Pow(_config.AllyMarkerScale, 2f) * 100f);
 
 		var changed = false;
 
@@ -74,6 +81,32 @@ internal class ConfigWindow : Window, IDisposable
 				}
 				ImGuiComponents.HelpMarker("By default, off-map markers are 39.1% the size of markers that are in minimap radius." +
 										   "\nChanging this to 100% will make off-map markers the same size as markers that are in range.");
+			}
+
+			if (changed |= ImGui.Checkbox("Override Player Marker Scale", ref overridePlayerMarker))
+			{
+				_config.OverridePlayerMarker = overridePlayerMarker;
+			}
+
+			if (overridePlayerMarker)
+			{
+				if (changed |= Slider("Player Marker Scale", ref playerMarkerScale, 5f, 400f))
+				{
+					_config.PlayerMarkerScale = float.Sqrt(playerMarkerScale / 100f);
+				}
+			}
+
+			if (changed |= ImGui.Checkbox("Override Ally Marker Scale", ref overrideAllyMarkers))
+			{
+				_config.OverrideAllyMarkers = overrideAllyMarkers;
+			}
+
+			if (overrideAllyMarkers)
+			{
+				if (changed |= Slider("Ally Marker Scale", ref allyMarkerScale, 5f, 400f))
+				{
+					_config.AllyMarkerScale = float.Sqrt(allyMarkerScale / 100f);
+				}
 			}
 		}
 

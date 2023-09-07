@@ -16,6 +16,14 @@ public class Configuration : IPluginConfiguration
 
 	public float OffMapIconScalar { get; set; } = 1f;
 
+	public bool OverridePlayerMarker { get; set; } = false;
+
+	public float PlayerMarkerScale { get; set; } = 1f;
+
+	public bool OverrideAllyMarkers { get; set; } = false;
+
+	public float AllyMarkerScale { get; set; } = 1f;
+
 	[NonSerialized]
 	private DalamudPluginInterface? _pluginInterface;
 

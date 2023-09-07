@@ -89,10 +89,11 @@ internal class ResizeUtil
 	{
 		>= 60409 and <= 60411 => 1.0f,  // quest search areas
 		>= 60421 and <= 60424 => 1.0f,  // party members, enemies
-		60443 => 1.0f,                  // player marker
+		60443 => _config.OverridePlayerMarker ? _config.PlayerMarkerScale : _config.MinimapIconScale,               // player marker
 		60457 => 1.0f,                  // map transition
+		60469 or 60470 => _config.OverrideAllyMarkers ? _config.AllyMarkerScale : _config.MinimapIconScale, // party member and alliance member?
 		>= 60495 and <= 60498 => 1.0f,  // more quest search areas
-		60961 => 1.0f,                  // pet marker
+		60961 => _config.OverrideAllyMarkers ? _config.AllyMarkerScale : _config.MinimapIconScale, // pet marker
 		_ => _config.MinimapIconScale,
 	};
 }
