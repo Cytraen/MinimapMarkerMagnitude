@@ -54,14 +54,14 @@ internal class ResizeUtil
 				continue;
 			}
 
-			if (_config.EnableOffMapResizing && offScreenArrow is not null)
+			if (_config.ResizeOffMapIcons && offScreenArrow is not null)
 			{
 				if (!offScreenArrow->IsVisible)
 				{
 					PluginLog.Warning("Found non-visible arrow");
 				}
 
-				SetScale(collisionNode, iconNode, heightMarkerNode, _config.OffMapIconScale);
+				SetScale(collisionNode, iconNode, heightMarkerNode, _config.OffMapIconScalar * IconMap(iconId));
 			}
 			else
 			{

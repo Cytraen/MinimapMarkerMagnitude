@@ -10,11 +10,11 @@ public class Configuration : IPluginConfiguration
 
 	public bool EnableResizing { get; set; } = true;
 
-	public float MinimapIconScale { get; set; } = 1.0f;
+	public float MinimapIconScale { get; set; } = 1f;
 
-	public bool EnableOffMapResizing { get; set; } = false;
+	public bool ResizeOffMapIcons { get; set; } = false;
 
-	public float OffMapIconScale { get; set; } = 1.0f;
+	public float OffMapIconScalar { get; set; } = 1f;
 
 	[NonSerialized]
 	private DalamudPluginInterface? _pluginInterface;
