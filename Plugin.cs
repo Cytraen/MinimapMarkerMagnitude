@@ -1,9 +1,7 @@
-using Dalamud.Game;
-using Dalamud.Game.ClientState;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Command;
-using Dalamud.Game.Gui;
 using Dalamud.Interface.Windowing;
-using Dalamud.IoC;
 using Dalamud.Plugin;
 using MinimapMarkerMagnitude.Windows;
 
@@ -11,77 +9,77 @@ namespace MinimapMarkerMagnitude;
 
 internal sealed class Plugin : IDalamudPlugin
 {
-	public string Name => "Minimap Marker Magnitude";
 	private const string ConfigWindowCommandName = "/mmm";
-
-	private readonly AddonNaviMapUpdateHook _addonHook;
-	private readonly WindowSystem _windowSystem;
-	private readonly DalamudPluginInterface _pluginInterface;
-	private readonly ClientState _clientState;
-	private readonly CommandManager _commandManager;
 	private readonly ConfigWindow _configWindow;
+	private readonly WindowSystem _windowSystem;
 
-	public Plugin(
-		[RequiredVersion("1.0")] ISigScanner sigScanner,
-		[RequiredVersion("1.0")] GameGui gameGui,
-		[RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
-		[RequiredVersion("1.0")] ClientState clientState,
-		[RequiredVersion("1.0")] CommandManager commandManager)
+	public Plugin(DalamudPluginInterface pluginInterface)
 	{
+		pluginInterface.Create<Services>();
+
 		_windowSystem = new WindowSystem("MinimapMarkerMagnitude");
-		_pluginInterface = pluginInterface;
-		_clientState = clientState;
-		_commandManager = commandManager;
 
-		var config = _pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-		config.Initialize(_pluginInterface);
+		Services.Config = Services.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
-		_addonHook = new AddonNaviMapUpdateHook(sigScanner, config, gameGui);
-
-		_configWindow = new ConfigWindow(config, _addonHook);
+		_configWindow = new ConfigWindow(this);
 
 		_windowSystem.AddWindow(_configWindow);
 
-		_commandManager.AddHandler(ConfigWindowCommandName, new CommandInfo(OnConfigWindowCommand)
+		Services.CommandManager.AddHandler(ConfigWindowCommandName, new CommandInfo(OnConfigWindowCommand)
 		{
 			HelpMessage = "Opens the Minimap Marker Magnitude config window."
 		});
 
-		_pluginInterface.UiBuilder.Draw += DrawUi;
-		_pluginInterface.UiBuilder.OpenConfigUi += DrawConfigUi;
+		Services.PluginInterface.UiBuilder.Draw += DrawUi;
+		Services.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUi;
 
-		_clientState.Login += Login;
-		_clientState.Logout += Logout;
+		Services.ClientState.Login += Enable;
+		Services.ClientState.Logout += Disable;
 
-		if (_clientState.IsLoggedIn)
+		if (Services.ClientState.IsLoggedIn)
 		{
-			_addonHook.Enable();
+			Enable();
 		}
 	}
 
-	private void Login(object? sender, EventArgs e)
+	internal void Enable()
 	{
-		_addonHook.Enable();
+		if (Services.Config.EnableResizing)
+		{
+			Services.AddonLifecycle.RegisterListener(AddonEvent.PreUpdate, "_NaviMap", NaviMapPreUpdateListener);
+		}
 	}
 
-	private void Logout(object? sender, EventArgs e)
+	internal void Disable()
 	{
-		_addonHook.Disable();
+		Services.AddonLifecycle.UnregisterListener(NaviMapPreUpdateListener);
+		ResizeUtil.ResizeIcons();
+	}
+
+	private void NaviMapPreUpdateListener(AddonEvent addonEvent, AddonArgs addonArgs)
+	{
+		try
+		{
+			ResizeUtil.ResizeIcons();
+		}
+		catch (Exception ex)
+		{
+			Services.PluginLog.Error(ex, "An error occurred when handling a AddonNaviMap_Update.");
+			Disable();
+		}
 	}
 
 	public void Dispose()
 	{
 		_windowSystem.RemoveAllWindows();
 		_configWindow.Dispose();
-		_commandManager.RemoveHandler(ConfigWindowCommandName);
+		Services.CommandManager.RemoveHandler(ConfigWindowCommandName);
 
-		_pluginInterface.UiBuilder.Draw -= DrawUi;
-		_pluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUi;
+		Services.PluginInterface.UiBuilder.Draw -= DrawUi;
+		Services.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUi;
 
-		_clientState.Login -= Login;
-		_clientState.Logout -= Logout;
-
-		_addonHook.Dispose();
+		Services.ClientState.Login -= Enable;
+		Services.ClientState.Logout -= Disable;
 	}
 
 	private void OnConfigWindowCommand(string command, string args)

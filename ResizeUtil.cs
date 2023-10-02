@@ -1,24 +1,12 @@
-using Dalamud.Game.Gui;
-using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace MinimapMarkerMagnitude;
 
-internal class ResizeUtil
+internal static class ResizeUtil
 {
-	private readonly GameGui _gameGui;
-
-	private readonly Configuration _config;
-
-	internal ResizeUtil(GameGui gameGui, Configuration config)
+	internal static unsafe void ResizeIcons(bool reset = false)
 	{
-		_gameGui = gameGui;
-		_config = config;
-	}
-
-	internal unsafe void ResizeIcons(bool reset = false)
-	{
-		var unitBase = (AtkUnitBase*)_gameGui.GetAddonByName("_NaviMap");
+		var unitBase = (AtkUnitBase*)Services.GameGui.GetAddonByName("_NaviMap");
 		if (unitBase is null || unitBase->UldManager.NodeListCount < 19) return;
 		var iconNodeList = unitBase->GetNodeById(18)->GetAsAtkComponentNode();
 
@@ -36,14 +24,14 @@ internal class ResizeUtil
 
 			if (imageNode->PartsList->PartCount == 0)
 			{
-				PluginLog.Warning("AtkImageNode had no parts");
+				Services.PluginLog.Warning("AtkImageNode had no parts");
 			}
 
 			if (GetIconId(imageNode->PartsList->Parts[0].UldAsset) is not { } iconId || iconId == -1)
 			{
 				if (imageNode->PartsList->PartCount != 1)
 				{
-					PluginLog.Warning("More than 1 part and iconId was not -1");
+					Services.PluginLog.Warning("More than 1 part and iconId was not -1");
 				}
 				continue;
 			}
@@ -54,14 +42,14 @@ internal class ResizeUtil
 				continue;
 			}
 
-			if (_config.ResizeOffMapIcons && offScreenArrow is not null)
+			if (Services.Config.ResizeOffMapIcons && offScreenArrow is not null)
 			{
 				if (!offScreenArrow->IsVisible)
 				{
-					PluginLog.Warning("Found non-visible arrow");
+					Services.PluginLog.Warning("Found non-visible arrow");
 				}
 
-				SetScale(collisionNode, iconNode, heightMarkerNode, _config.OffMapIconScalar * IconMap(iconId));
+				SetScale(collisionNode, iconNode, heightMarkerNode, Services.Config.OffMapIconScalar * IconMap(iconId));
 			}
 			else
 			{
@@ -85,15 +73,15 @@ internal class ResizeUtil
 		return res->IconID;
 	}
 
-	private float IconMap(int iconId) => iconId switch
+	private static float IconMap(int iconId) => iconId switch
 	{
 		>= 60409 and <= 60411 => 1.0f,  // quest search areas
 		>= 60421 and <= 60424 => 1.0f,  // party members, enemies
-		60443 => _config.OverridePlayerMarker ? _config.PlayerMarkerScale : _config.MinimapIconScale,               // player marker
+		60443 => Services.Config.OverridePlayerMarker ? Services.Config.PlayerMarkerScale : Services.Config.MinimapIconScale,               // player marker
 		60457 => 1.0f,                  // map transition
-		60469 or 60470 => _config.OverrideAllyMarkers ? _config.AllyMarkerScale : _config.MinimapIconScale, // party member and alliance member?
+		60469 or 60470 => Services.Config.OverrideAllyMarkers ? Services.Config.AllyMarkerScale : Services.Config.MinimapIconScale, // party member and alliance member?
 		>= 60495 and <= 60498 => 1.0f,  // more quest search areas
-		60961 => _config.OverrideAllyMarkers ? _config.AllyMarkerScale : _config.MinimapIconScale, // pet marker
-		_ => _config.MinimapIconScale,
+		60961 => Services.Config.OverrideAllyMarkers ? Services.Config.AllyMarkerScale : Services.Config.MinimapIconScale, // pet marker
+		_ => Services.Config.MinimapIconScale,
 	};
 }

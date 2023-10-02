@@ -8,16 +8,14 @@ namespace MinimapMarkerMagnitude.Windows;
 
 internal class ConfigWindow : Window, IDisposable
 {
-	private readonly Configuration _config;
-	private readonly AddonNaviMapUpdateHook _addonHook;
+	private readonly Plugin _plugin;
 
-	internal ConfigWindow(Configuration config, AddonNaviMapUpdateHook addonHook) : base(
+	internal ConfigWindow(Plugin plugin) : base(
 		"Minimap Marker Magnitude Settings",
 		ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
 	{
+		_plugin = plugin;
 		Size = new Vector2(0, 0);
-		_config = config;
-		_addonHook = addonHook;
 	}
 
 	public void Dispose()
@@ -27,30 +25,30 @@ internal class ConfigWindow : Window, IDisposable
 
 	public override void Draw()
 	{
-		var enableResizing = _config.EnableResizing;
-		var iconScale = (float)(Math.Pow(_config.MinimapIconScale, 2f) * 100f);
+		var enableResizing = Services.Config.EnableResizing;
+		var iconScale = (float)(Math.Pow(Services.Config.MinimapIconScale, 2f) * 100f);
 
-		var resizeOffMapIcons = _config.ResizeOffMapIcons;
-		var offMapIconScale = (float)(Math.Pow(_config.OffMapIconScalar * 0.625f, 2f) * 100f);
+		var resizeOffMapIcons = Services.Config.ResizeOffMapIcons;
+		var offMapIconScale = (float)(Math.Pow(Services.Config.OffMapIconScalar * 0.625f, 2f) * 100f);
 
-		var overridePlayerMarker = _config.OverridePlayerMarker;
-		var playerMarkerScale = (float)(Math.Pow(_config.PlayerMarkerScale, 2f) * 100f);
+		var overridePlayerMarker = Services.Config.OverridePlayerMarker;
+		var playerMarkerScale = (float)(Math.Pow(Services.Config.PlayerMarkerScale, 2f) * 100f);
 
-		var overrideAllyMarkers = _config.OverrideAllyMarkers;
-		var allyMarkerScale = (float)(Math.Pow(_config.AllyMarkerScale, 2f) * 100f);
+		var overrideAllyMarkers = Services.Config.OverrideAllyMarkers;
+		var allyMarkerScale = (float)(Math.Pow(Services.Config.AllyMarkerScale, 2f) * 100f);
 
 		var changed = false;
 
 		if (changed |= ImGui.Checkbox("Resize Minimap Markers", ref enableResizing))
 		{
-			_config.EnableResizing = enableResizing;
+			Services.Config.EnableResizing = enableResizing;
 			if (enableResizing)
 			{
-				_addonHook.Enable();
+				_plugin.Enable();
 			}
 			else
 			{
-				_addonHook.Disable();
+				_plugin.Enable();
 			}
 		}
 
@@ -63,12 +61,12 @@ internal class ConfigWindow : Window, IDisposable
 		{
 			if (changed |= Slider("Marker Scale", ref iconScale, 5f, 400f))
 			{
-				_config.MinimapIconScale = float.Sqrt(iconScale / 100f);
+				Services.Config.MinimapIconScale = float.Sqrt(iconScale / 100f);
 			}
 
 			if (changed |= ImGui.Checkbox("Resize Off-map Markers", ref resizeOffMapIcons))
 			{
-				_config.ResizeOffMapIcons = resizeOffMapIcons;
+				Services.Config.ResizeOffMapIcons = resizeOffMapIcons;
 			}
 			ImGuiComponents.HelpMarker("Enables changing the size of far away things like active quests and party members," +
 									   "\nrelative to the marker scale.");
@@ -77,7 +75,7 @@ internal class ConfigWindow : Window, IDisposable
 			{
 				if (changed |= Slider("Off-map Marker Scalar", ref offMapIconScale, 5f, 200f))
 				{
-					_config.OffMapIconScalar = float.Sqrt(offMapIconScale / 100f) / 0.625f;
+					Services.Config.OffMapIconScalar = float.Sqrt(offMapIconScale / 100f) / 0.625f;
 				}
 				ImGuiComponents.HelpMarker("By default, off-map markers are 39.1% the size of markers that are in minimap radius." +
 										   "\nChanging this to 100% will make off-map markers the same size as markers that are in range.");
@@ -85,34 +83,34 @@ internal class ConfigWindow : Window, IDisposable
 
 			if (changed |= ImGui.Checkbox("Override Player Marker Scale", ref overridePlayerMarker))
 			{
-				_config.OverridePlayerMarker = overridePlayerMarker;
+				Services.Config.OverridePlayerMarker = overridePlayerMarker;
 			}
 
 			if (overridePlayerMarker)
 			{
 				if (changed |= Slider("Player Marker Scale", ref playerMarkerScale, 5f, 400f))
 				{
-					_config.PlayerMarkerScale = float.Sqrt(playerMarkerScale / 100f);
+					Services.Config.PlayerMarkerScale = float.Sqrt(playerMarkerScale / 100f);
 				}
 			}
 
 			if (changed |= ImGui.Checkbox("Override Ally Marker Scale", ref overrideAllyMarkers))
 			{
-				_config.OverrideAllyMarkers = overrideAllyMarkers;
+				Services.Config.OverrideAllyMarkers = overrideAllyMarkers;
 			}
 
 			if (overrideAllyMarkers)
 			{
 				if (changed |= Slider("Ally Marker Scale", ref allyMarkerScale, 5f, 400f))
 				{
-					_config.AllyMarkerScale = float.Sqrt(allyMarkerScale / 100f);
+					Services.Config.AllyMarkerScale = float.Sqrt(allyMarkerScale / 100f);
 				}
 			}
 		}
 
 		if (changed)
 		{
-			_config.Save();
+			Services.Config.Save();
 		}
 	}
 
