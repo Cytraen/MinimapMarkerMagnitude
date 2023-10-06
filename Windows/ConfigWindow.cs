@@ -1,6 +1,7 @@
-using Dalamud.Interface.Components;
+using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
+using MinimapMarkerMagnitude.Config;
 using System.Globalization;
 using System.Numerics;
 
@@ -9,13 +10,18 @@ namespace MinimapMarkerMagnitude.Windows;
 internal class ConfigWindow : Window, IDisposable
 {
 	private readonly Plugin _plugin;
+	private int? _currentEditingGroup;
+
+	private string _groupNameInput = string.Empty;
 
 	internal ConfigWindow(Plugin plugin) : base(
 		"Minimap Marker Magnitude Settings",
 		ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
 	{
 		_plugin = plugin;
-		Size = new Vector2(0, 0);
+		SizeCondition = ImGuiCond.FirstUseEver;
+		Size = new Vector2(660, 360);
+		SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(660, 300), MaximumSize = new Vector2(99999, 99999) };
 	}
 
 	public void Dispose()
@@ -25,98 +31,192 @@ internal class ConfigWindow : Window, IDisposable
 
 	public override void Draw()
 	{
-		var enableResizing = Services.Config.EnableResizing;
-		var iconScale = (float)(Math.Pow(Services.Config.MinimapIconScale, 2f) * 100f);
+		if (_currentEditingGroup == null)
+			DrawMainConfig();
+		else
+			DrawGroupEdit(_currentEditingGroup.Value);
+	}
 
-		var resizeOffMapIcons = Services.Config.ResizeOffMapIcons;
-		var offMapIconScale = (float)(Math.Pow(Services.Config.OffMapIconScalar * 0.625f, 2f) * 100f);
+	private void DrawGroupEdit(int editGroup)
+	{
+		var changed = false;
+		var group = Services.Config.IconGroups[editGroup];
+		var iconScale = (float)(Math.Pow(group.GroupScale, 2f) * 100f);
+		_groupNameInput = group.GroupName;
 
-		var overridePlayerMarker = Services.Config.OverridePlayerMarker;
-		var playerMarkerScale = (float)(Math.Pow(Services.Config.PlayerMarkerScale, 2f) * 100f);
+		ImGui.PushFont(UiBuilder.IconFont);
+		if (ImGui.Button(FontAwesomeIcon.ArrowLeft.ToIconString()))
+		{
+			_currentEditingGroup = null;
+			_groupNameInput = string.Empty;
+		}
 
-		var overrideAllyMarkers = Services.Config.OverrideAllyMarkers;
-		var allyMarkerScale = (float)(Math.Pow(Services.Config.AllyMarkerScale, 2f) * 100f);
+		ImGui.PopFont();
+		ImGui.SameLine();
+
+		if (ImGui.InputTextWithHint("##MarkerGroupNameInput", "Edit Group Name", ref _groupNameInput, 100))
+		{
+			changed = true;
+			group.GroupName = _groupNameInput;
+		}
+
+		if (Slider("Group Marker Scale", ref iconScale, 5f, 400f))
+		{
+			group.GroupScale = float.Sqrt(iconScale / 100f);
+			changed = true;
+		}
+
+		if (ImGui.BeginChild("ScrollableSection", ImGui.GetContentRegionAvail(), false, ImGuiWindowFlags.NoMove))
+		{
+			var rowItems = 0;
+			var itemsPerRow = (int)MathF.Floor(ImGui.GetContentRegionMax().X / (64 + ImGui.GetStyle().ItemSpacing.X));
+
+			foreach (var iconId in Services.SeenIcons)
+			{
+				var tex = Services.TextureProvider.GetIcon((uint)iconId);
+				if (tex is null) continue;
+				var selected = group.GroupIconIds.Contains(iconId);
+
+				ImGui.Image(tex.ImGuiHandle,
+					new Vector2(64, 64),
+					new Vector2(),
+					new Vector2(1, 1),
+					new Vector4(1, 1, 1, 1),
+					selected ? new Vector4(0, 1, 0, 1) : new Vector4(1, 1, 1, 1));
+
+				if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
+				{
+					if (selected)
+						group.GroupIconIds.Remove(iconId);
+					else
+						group.GroupIconIds.Add(iconId);
+					changed = true;
+				}
+
+				rowItems++;
+
+				if (rowItems < itemsPerRow)
+					ImGui.SameLine();
+				else
+					rowItems = 0;
+			}
+		}
+
+		ImGui.EndChild();
+
+		if (changed) Services.Config.Save();
+	}
+
+	private void DrawMainConfig()
+	{
+		const ImGuiTableFlags tableFlags =
+			ImGuiTableFlags.RowBg |
+			ImGuiTableFlags.Borders |
+			ImGuiTableFlags.BordersOuter |
+			ImGuiTableFlags.BordersInner |
+			ImGuiTableFlags.ScrollY |
+			ImGuiTableFlags.NoSavedSettings;
 
 		var changed = false;
 
-		if (changed |= ImGui.Checkbox("Resize Minimap Markers", ref enableResizing))
+		var enableResizing = Services.Config.EnableResizing;
+		var iconScale = (float)(Math.Pow(Services.Config.DefaultMinimapIconScale, 2f) * 100f);
+		var resizeOffMapIcons = Services.Config.ResizeOffMapIcons;
+		var offMapIconScale = (float)(Math.Pow(Services.Config.DefaultOffMapIconScalar * 0.625f, 2f) * 100f);
+
+		if (ImGui.Checkbox("Enable", ref enableResizing))
 		{
 			Services.Config.EnableResizing = enableResizing;
+			changed = true;
 			if (enableResizing)
-			{
 				_plugin.Enable();
-			}
 			else
-			{
-				_plugin.Enable();
-			}
+				_plugin.Disable();
 		}
 
-		if (!enableResizing)
+		ImGui.SameLine();
+		ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X * 0.3f);
+		ImGui.Text("   Default Marker Scale:");
+		ImGui.SameLine();
+		ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+		if (Slider("##Default Marker Scale", ref iconScale, 5f, 400f))
 		{
-			ImGui.SameLine(0, 0);
-			ImGui.Text(new string(' ', 30));
+			Services.Config.DefaultMinimapIconScale = float.Sqrt(iconScale / 100f);
+			changed = true;
 		}
-		else
+
+		if (ImGui.Checkbox("Resize Off-map Markers", ref resizeOffMapIcons))
 		{
-			if (changed |= Slider("Marker Scale", ref iconScale, 5f, 400f))
-			{
-				Services.Config.MinimapIconScale = float.Sqrt(iconScale / 100f);
-			}
-
-			if (changed |= ImGui.Checkbox("Resize Off-map Markers", ref resizeOffMapIcons))
-			{
-				Services.Config.ResizeOffMapIcons = resizeOffMapIcons;
-			}
-			ImGuiComponents.HelpMarker("Enables changing the size of far away things like active quests and party members," +
-									   "\nrelative to the marker scale.");
-
-			if (resizeOffMapIcons)
-			{
-				if (changed |= Slider("Off-map Marker Scalar", ref offMapIconScale, 5f, 200f))
-				{
-					Services.Config.OffMapIconScalar = float.Sqrt(offMapIconScale / 100f) / 0.625f;
-				}
-				ImGuiComponents.HelpMarker("By default, off-map markers are 39.1% the size of markers that are in minimap radius." +
-										   "\nChanging this to 100% will make off-map markers the same size as markers that are in range.");
-			}
-
-			if (changed |= ImGui.Checkbox("Override Player Marker Scale", ref overridePlayerMarker))
-			{
-				Services.Config.OverridePlayerMarker = overridePlayerMarker;
-			}
-
-			if (overridePlayerMarker)
-			{
-				if (changed |= Slider("Player Marker Scale", ref playerMarkerScale, 5f, 400f))
-				{
-					Services.Config.PlayerMarkerScale = float.Sqrt(playerMarkerScale / 100f);
-				}
-			}
-
-			if (changed |= ImGui.Checkbox("Override Ally Marker Scale", ref overrideAllyMarkers))
-			{
-				Services.Config.OverrideAllyMarkers = overrideAllyMarkers;
-			}
-
-			if (overrideAllyMarkers)
-			{
-				if (changed |= Slider("Ally Marker Scale", ref allyMarkerScale, 5f, 400f))
-				{
-					Services.Config.AllyMarkerScale = float.Sqrt(allyMarkerScale / 100f);
-				}
-			}
+			Services.Config.ResizeOffMapIcons = resizeOffMapIcons;
+			changed = true;
 		}
-
-		if (changed)
+		ImGui.SameLine();
+		ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X * 0.3f);
+		ImGui.Text("Off-map Marker Scalar:");
+		ImGui.SameLine();
+		ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+		if (Slider("##Off-map Marker Scalar", ref offMapIconScale, 5f, 200f))
 		{
-			Services.Config.Save();
+			Services.Config.DefaultOffMapIconScalar = float.Sqrt(offMapIconScale / 100f) / 0.625f;
+			changed = true;
 		}
+
+		ImGui.InputTextWithHint("##MarkerGroupNameInput", "New Icon Group Name", ref _groupNameInput, 100);
+
+		ImGui.SameLine();
+
+		ImGui.PushFont(UiBuilder.IconFont);
+
+		if (ImGui.Button(FontAwesomeIcon.Plus.ToIconString()) && !string.IsNullOrWhiteSpace(_groupNameInput))
+		{
+			Services.Config.IconGroups.Add(new MinimapIconGroup { GroupName = _groupNameInput });
+			_groupNameInput = string.Empty;
+			changed = true;
+		}
+
+		ImGui.PopFont();
+
+		if (ImGui.BeginTable("test", 2, tableFlags))
+		{
+			ImGui.AlignTextToFramePadding();
+			ImGui.TableSetupColumn("Icon Group", ImGuiTableColumnFlags.WidthStretch, 0, 0);
+			ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 60, 1);
+
+			ImGui.TableHeadersRow();
+
+			for (var i = 0; i < Services.Config.IconGroups.Count; i++)
+			{
+				var group = Services.Config.IconGroups[i];
+				ImGui.PushID(i);
+				ImGui.TableNextRow();
+				ImGui.TableSetColumnIndex(0);
+				ImGui.Text(group.GroupName);
+				ImGui.TableSetColumnIndex(1);
+				ImGui.PushFont(UiBuilder.IconFont);
+
+				if (ImGui.Button(FontAwesomeIcon.Edit.ToIconString())) _currentEditingGroup = i;
+
+				ImGui.SameLine();
+
+				if (ImGui.Button(FontAwesomeIcon.Trash.ToIconString()))
+				{
+					Services.Config.IconGroups.Remove(group);
+					changed = true;
+				}
+
+				ImGui.PopFont();
+			}
+
+			ImGui.EndTable();
+		}
+
+		if (changed) Services.Config.Save();
 	}
 
 	private static bool Slider(string label, ref float value, float min, float max)
 	{
 		return ImGui.SliderFloat(label, ref value, min, max,
-			value.ToString(@".0\%\%", CultureInfo.CurrentCulture), ImGuiSliderFlags.Logarithmic);
+			value.ToString(@".0\%\%", CultureInfo.CurrentCulture),
+			ImGuiSliderFlags.Logarithmic | ImGuiSliderFlags.AlwaysClamp);
 	}
 }

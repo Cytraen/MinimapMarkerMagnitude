@@ -3,6 +3,7 @@ using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
+using MinimapMarkerMagnitude.Config;
 using MinimapMarkerMagnitude.Windows;
 
 namespace MinimapMarkerMagnitude;
@@ -16,13 +17,13 @@ internal sealed class Plugin : IDalamudPlugin
 	public Plugin(DalamudPluginInterface pluginInterface)
 	{
 		pluginInterface.Create<Services>();
+		Configuration.Load();
+		SeenIconSet.Load();
+
+		ResizeUtil.CompileIconSizes();
 
 		_windowSystem = new WindowSystem("MinimapMarkerMagnitude");
-
-		Services.Config = Services.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-
 		_configWindow = new ConfigWindow(this);
-
 		_windowSystem.AddWindow(_configWindow);
 
 		Services.CommandManager.AddHandler(ConfigWindowCommandName, new CommandInfo(OnConfigWindowCommand)
@@ -36,37 +37,7 @@ internal sealed class Plugin : IDalamudPlugin
 		Services.ClientState.Login += Enable;
 		Services.ClientState.Logout += Disable;
 
-		if (Services.ClientState.IsLoggedIn)
-		{
-			Enable();
-		}
-	}
-
-	internal void Enable()
-	{
-		if (Services.Config.EnableResizing)
-		{
-			Services.AddonLifecycle.RegisterListener(AddonEvent.PreUpdate, "_NaviMap", NaviMapPreUpdateListener);
-		}
-	}
-
-	internal void Disable()
-	{
-		Services.AddonLifecycle.UnregisterListener(NaviMapPreUpdateListener);
-		ResizeUtil.ResizeIcons();
-	}
-
-	private void NaviMapPreUpdateListener(AddonEvent addonEvent, AddonArgs addonArgs)
-	{
-		try
-		{
-			ResizeUtil.ResizeIcons();
-		}
-		catch (Exception ex)
-		{
-			Services.PluginLog.Error(ex, "An error occurred when handling a AddonNaviMap_Update.");
-			Disable();
-		}
+		if (Services.ClientState.IsLoggedIn) Enable();
 	}
 
 	public void Dispose()
@@ -80,6 +51,31 @@ internal sealed class Plugin : IDalamudPlugin
 
 		Services.ClientState.Login -= Enable;
 		Services.ClientState.Logout -= Disable;
+	}
+
+	internal void Enable()
+	{
+		if (Services.Config.EnableResizing)
+			Services.AddonLifecycle.RegisterListener(AddonEvent.PreUpdate, "_NaviMap", NaviMapPreUpdateListener);
+	}
+
+	internal void Disable()
+	{
+		Services.AddonLifecycle.UnregisterListener(NaviMapPreUpdateListener);
+		ResizeUtil.ResizeIcons(true);
+	}
+
+	private void NaviMapPreUpdateListener(AddonEvent addonEvent, AddonArgs addonArgs)
+	{
+		try
+		{
+			ResizeUtil.ResizeIcons();
+		}
+		catch (Exception ex)
+		{
+			Services.PluginLog.Error(ex, "An error occurred when handling a AddonNaviMap_Update.");
+			Disable();
+		}
 	}
 
 	private void OnConfigWindowCommand(string command, string args)

@@ -4,6 +4,14 @@ namespace MinimapMarkerMagnitude;
 
 internal static class ResizeUtil
 {
+	internal static void CompileIconSizes()
+	{
+		Services.CompiledSizeOverrides = Services.Config.IconGroups
+			.SelectMany(x => x.GroupIconIds, (group, iconId) => new { iconId, group.GroupScale })
+			.GroupBy(x => x.iconId)
+			.ToDictionary(x => x.First().iconId, x => x.First().GroupScale);
+	}
+
 	internal static unsafe void ResizeIcons(bool reset = false)
 	{
 		var unitBase = (AtkUnitBase*)Services.GameGui.GetAddonByName("_NaviMap");
@@ -36,6 +44,12 @@ internal static class ResizeUtil
 				continue;
 			}
 
+			if (!Services.SeenIcons.Contains(iconId))
+			{
+				Services.SeenIcons.Add(iconId);
+				Services.SeenIcons.Save();
+			}
+
 			if (reset)
 			{
 				SetScale(collisionNode, iconNode, heightMarkerNode, 1.0f);
@@ -49,7 +63,7 @@ internal static class ResizeUtil
 					Services.PluginLog.Warning("Found non-visible arrow");
 				}
 
-				SetScale(collisionNode, iconNode, heightMarkerNode, Services.Config.OffMapIconScalar * IconMap(iconId));
+				SetScale(collisionNode, iconNode, heightMarkerNode, Services.Config.DefaultOffMapIconScalar * IconMap(iconId));
 			}
 			else
 			{
@@ -77,11 +91,11 @@ internal static class ResizeUtil
 	{
 		>= 60409 and <= 60411 => 1.0f,  // quest search areas
 		>= 60421 and <= 60424 => 1.0f,  // party members, enemies
-		60443 => Services.Config.OverridePlayerMarker ? Services.Config.PlayerMarkerScale : Services.Config.MinimapIconScale,               // player marker
+		60443 => 1.0f,                  // player marker
 		60457 => 1.0f,                  // map transition
-		60469 or 60470 => Services.Config.OverrideAllyMarkers ? Services.Config.AllyMarkerScale : Services.Config.MinimapIconScale, // party member and alliance member?
+		60469 or 60470 => 1.0f,         // party member and alliance member?
 		>= 60495 and <= 60498 => 1.0f,  // more quest search areas
-		60961 => Services.Config.OverrideAllyMarkers ? Services.Config.AllyMarkerScale : Services.Config.MinimapIconScale, // pet marker
-		_ => Services.Config.MinimapIconScale,
+		60961 => 1.0f,                  // pet marker
+		_ => Services.CompiledSizeOverrides.TryGetValue(iconId, out var size) ? size : Services.Config.DefaultMinimapIconScale,
 	};
 }
