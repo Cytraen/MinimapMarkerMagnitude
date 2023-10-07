@@ -11,7 +11,9 @@ public class SeenIconSet : HashSet<int>
 		var loc = Path.Combine(Services.PluginInterface.GetPluginConfigDirectory(), FileName);
 		if (File.Exists(loc))
 		{
-			Services.SeenIcons = JsonSerializer.Deserialize<SeenIconSet>(File.ReadAllText(loc))!;
+			var iconSet = JsonSerializer.Deserialize<SeenIconSet>(File.ReadAllText(loc))!;
+			iconSet.RemoveWhere(ResizeUtil.IsBannedIcon);
+			Services.SeenIcons = iconSet;
 		}
 		else
 		{

@@ -30,21 +30,12 @@ internal static class ResizeUtil
 			var imageNode = iconNode->GetAsAtkImageNode();
 			if (imageNode is null) continue;
 
-			if (imageNode->PartsList->PartCount == 0)
-			{
-				Services.PluginLog.Warning("AtkImageNode had no parts");
-			}
-
 			if (GetIconId(imageNode->PartsList->Parts[0].UldAsset) is not { } iconId || iconId == -1)
 			{
-				if (imageNode->PartsList->PartCount != 1)
-				{
-					Services.PluginLog.Warning("More than 1 part and iconId was not -1");
-				}
 				continue;
 			}
 
-			if (!Services.SeenIcons.Contains(iconId))
+			if (!IsBannedIcon(iconId) && !Services.SeenIcons.Contains(iconId))
 			{
 				Services.SeenIcons.Add(iconId);
 				Services.SeenIcons.Save();
@@ -58,16 +49,11 @@ internal static class ResizeUtil
 
 			if (Services.Config.ResizeOffMapIcons && offScreenArrow is not null)
 			{
-				if (!offScreenArrow->IsVisible)
-				{
-					Services.PluginLog.Warning("Found non-visible arrow");
-				}
-
-				SetScale(collisionNode, iconNode, heightMarkerNode, Services.Config.DefaultOffMapIconScalar * IconMap(iconId));
+				SetScale(collisionNode, iconNode, heightMarkerNode, Services.Config.DefaultOffMapIconScalar * GetIconScale(iconId));
 			}
 			else
 			{
-				SetScale(collisionNode, iconNode, heightMarkerNode, IconMap(iconId));
+				SetScale(collisionNode, iconNode, heightMarkerNode, GetIconScale(iconId));
 			}
 		}
 	}
@@ -87,15 +73,20 @@ internal static class ResizeUtil
 		return res->IconID;
 	}
 
-	private static float IconMap(int iconId) => iconId switch
+	internal static bool IsBannedIcon(int iconId) => iconId switch
 	{
-		>= 60409 and <= 60411 => 1.0f,  // quest search areas
-		>= 60421 and <= 60424 => 1.0f,  // party members, enemies
-		60443 => 1.0f,                  // player marker
-		60457 => 1.0f,                  // map transition
-		60469 or 60470 => 1.0f,         // party member and alliance member?
-		>= 60495 and <= 60498 => 1.0f,  // more quest search areas
-		60961 => 1.0f,                  // pet marker
-		_ => Services.CompiledSizeOverrides.TryGetValue(iconId, out var size) ? size : Services.Config.DefaultMinimapIconScale,
+		>= 60409 and <= 60411 => true,  // quest search areas
+		60457 => true,                  // map transition
+		>= 60495 and <= 60498 => true,  // more quest search areas
+		60566 => true,                  // another search area?
+		_ => false,
 	};
+
+	private static float GetIconScale(int iconId)
+	{
+		if (IsBannedIcon(iconId)) return 1.0f;
+		return Services.CompiledSizeOverrides.TryGetValue(iconId, out var size)
+			? size
+			: Services.Config.DefaultMinimapIconScale;
+	}
 }

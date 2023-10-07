@@ -1,4 +1,5 @@
 using Dalamud.Interface;
+using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using MinimapMarkerMagnitude.Config;
@@ -13,6 +14,8 @@ internal class ConfigWindow : Window, IDisposable
 	private int? _currentEditingGroup;
 
 	private string _groupNameInput = string.Empty;
+	private bool _hideSelectedIcons;
+	private bool _sortIconsById;
 
 	internal ConfigWindow(Plugin plugin) : base(
 		"Minimap Marker Magnitude Settings",
@@ -21,7 +24,8 @@ internal class ConfigWindow : Window, IDisposable
 		_plugin = plugin;
 		SizeCondition = ImGuiCond.FirstUseEver;
 		Size = new Vector2(660, 360);
-		SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(660, 300), MaximumSize = new Vector2(99999, 99999) };
+		SizeConstraints = new WindowSizeConstraints
+		{ MinimumSize = new Vector2(660, 300), MaximumSize = new Vector2(99999, 99999) };
 	}
 
 	public void Dispose()
@@ -54,27 +58,57 @@ internal class ConfigWindow : Window, IDisposable
 		ImGui.PopFont();
 		ImGui.SameLine();
 
+		ImGui.Text("Group Name:");
+		ImGui.SameLine();
 		if (ImGui.InputTextWithHint("##MarkerGroupNameInput", "Edit Group Name", ref _groupNameInput, 100))
 		{
 			changed = true;
 			group.GroupName = _groupNameInput;
 		}
 
-		if (Slider("Group Marker Scale", ref iconScale, 5f, 400f))
+		ImGui.Text("Group Marker Scale:");
+		ImGui.SameLine();
+		if (Slider("##GroupMarkerScale", ref iconScale, 5f, 400f))
 		{
 			group.GroupScale = float.Sqrt(iconScale / 100f);
 			changed = true;
 		}
+
+		ImGui.Text("Sort Order:");
+		ImGui.SameLine();
+		ImGui.SetNextItemWidth(120);
+		if (ImGui.BeginCombo("##Sorting", _sortIconsById ? "Internal Icon ID" : "Newest First"))
+		{
+			if (ImGui.Selectable("Newest First")) _sortIconsById = false;
+
+			if (ImGui.Selectable("Internal Icon ID")) _sortIconsById = true;
+
+			ImGui.EndCombo();
+		}
+
+		ImGui.SameLine();
+		ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 60);
+		ImGui.Text("Hide Selected Icons:");
+		ImGui.SameLine();
+		ImGui.Checkbox("##ShowSelected", ref _hideSelectedIcons);
+		ImGuiComponents.HelpMarker(
+			"This will hide icons that are already part of this group." +
+			"\nIcons from other groups are always hidden, because an icon cannot belong to more than one group.");
 
 		if (ImGui.BeginChild("ScrollableSection", ImGui.GetContentRegionAvail(), false, ImGuiWindowFlags.NoMove))
 		{
 			var rowItems = 0;
 			var itemsPerRow = (int)MathF.Floor(ImGui.GetContentRegionMax().X / (64 + ImGui.GetStyle().ItemSpacing.X));
 
-			foreach (var iconId in Services.SeenIcons)
+			foreach (var iconId in _sortIconsById ? Services.SeenIcons.OrderBy(x => x) : Services.SeenIcons.Reverse())
 			{
+				if (Services.CompiledSizeOverrides.ContainsKey(iconId) &&
+					(!group.GroupIconIds.Contains(iconId) || _hideSelectedIcons))
+					continue;
+
 				var tex = Services.TextureProvider.GetIcon((uint)iconId);
 				if (tex is null) continue;
+
 				var selected = group.GroupIconIds.Contains(iconId);
 
 				ImGui.Image(tex.ImGuiHandle,
@@ -135,8 +169,8 @@ internal class ConfigWindow : Window, IDisposable
 		}
 
 		ImGui.SameLine();
-		ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X * 0.3f);
-		ImGui.Text("   Default Marker Scale:");
+		ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X * 0.3f + 10);
+		ImGui.Text("Default Marker Scale:");
 		ImGui.SameLine();
 		ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
 		if (Slider("##Default Marker Scale", ref iconScale, 5f, 400f))
@@ -150,6 +184,7 @@ internal class ConfigWindow : Window, IDisposable
 			Services.Config.ResizeOffMapIcons = resizeOffMapIcons;
 			changed = true;
 		}
+
 		ImGui.SameLine();
 		ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X * 0.3f);
 		ImGui.Text("Off-map Marker Scalar:");
@@ -176,11 +211,12 @@ internal class ConfigWindow : Window, IDisposable
 
 		ImGui.PopFont();
 
-		if (ImGui.BeginTable("test", 2, tableFlags))
+		if (ImGui.BeginTable("test", 3, tableFlags))
 		{
 			ImGui.AlignTextToFramePadding();
 			ImGui.TableSetupColumn("Icon Group", ImGuiTableColumnFlags.WidthStretch, 0, 0);
-			ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 60, 1);
+			ImGui.TableSetupColumn("Group Scale", ImGuiTableColumnFlags.WidthFixed, 80, 1);
+			ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 60, 2);
 
 			ImGui.TableHeadersRow();
 
@@ -192,6 +228,9 @@ internal class ConfigWindow : Window, IDisposable
 				ImGui.TableSetColumnIndex(0);
 				ImGui.Text(group.GroupName);
 				ImGui.TableSetColumnIndex(1);
+				ImGui.Text(((float)(Math.Pow(group.GroupScale, 2f) * 100f)).ToString("###.#\\%\\%",
+					CultureInfo.CurrentCulture));
+				ImGui.TableSetColumnIndex(2);
 				ImGui.PushFont(UiBuilder.IconFont);
 
 				if (ImGui.Button(FontAwesomeIcon.Edit.ToIconString())) _currentEditingGroup = i;
