@@ -95,10 +95,33 @@ internal class ConfigWindow : Window, IDisposable
 			"This will hide icons that are already part of this group." +
 			"\nIcons from other groups are always hidden, because an icon cannot belong to more than one group.");
 
+		ImGui.SameLine();
+		ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 60);
+
+		if (ImGui.IsKeyDown(ImGuiKey.ModCtrl) && ImGui.IsKeyDown(ImGuiKey.ModShift))
+		{
+			if (ImGui.Button("Delete Icon Group"))
+			{
+				Services.Config.IconGroups.Remove(group);
+				changed = true;
+				_currentEditingGroup = null;
+			}
+		}
+		else
+		{
+			ImGui.BeginDisabled();
+			ImGui.Button("Delete Icon Group");
+			if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+			{
+				ImGui.SetTooltip("Hold CTRL+SHIFT to allow deletion");
+			}
+			ImGui.EndDisabled();
+		}
+
 		if (ImGui.BeginChild("ScrollableSection", ImGui.GetContentRegionAvail(), false, ImGuiWindowFlags.NoMove))
 		{
 			var rowItems = 0;
-			var itemsPerRow = (int)MathF.Floor(ImGui.GetContentRegionMax().X / (64 + ImGui.GetStyle().ItemSpacing.X));
+			var itemsPerRow = (int)MathF.Floor(ImGui.GetContentRegionMax().X / (66 + ImGui.GetStyle().ItemSpacing.X));
 
 			foreach (var iconId in _sortIconsById ? Services.SeenIcons.OrderBy(x => x) : Services.SeenIcons.Reverse())
 			{
@@ -231,18 +254,9 @@ internal class ConfigWindow : Window, IDisposable
 				ImGui.Text(((float)(Math.Pow(group.GroupScale, 2f) * 100f)).ToString("###.#\\%\\%",
 					CultureInfo.CurrentCulture));
 				ImGui.TableSetColumnIndex(2);
+
 				ImGui.PushFont(UiBuilder.IconFont);
-
 				if (ImGui.Button(FontAwesomeIcon.Edit.ToIconString())) _currentEditingGroup = i;
-
-				ImGui.SameLine();
-
-				if (ImGui.Button(FontAwesomeIcon.Trash.ToIconString()))
-				{
-					Services.Config.IconGroups.Remove(group);
-					changed = true;
-				}
-
 				ImGui.PopFont();
 			}
 
