@@ -42,6 +42,8 @@ internal sealed class Plugin : IDalamudPlugin
 
 	public void Dispose()
 	{
+		Disable();
+
 		_windowSystem.RemoveAllWindows();
 		_configWindow.Dispose();
 		Services.CommandManager.RemoveHandler(ConfigWindowCommandName);
