@@ -35,16 +35,21 @@ internal static class ResizeUtil
 				continue;
 			}
 
-			if (!IsBannedIcon(iconId) && !Services.SeenIcons.Contains(iconId))
-			{
-				Services.SeenIcons.Add(iconId);
-				Services.SeenIcons.Save();
-			}
-
-			if (reset)
+			if (reset || IsBannedIcon(iconId))
 			{
 				SetScale(collisionNode, iconNode, heightMarkerNode, 1.0f);
 				continue;
+			}
+
+			if (!componentNode->AtkResNode.IsVisible)
+			{
+				continue;
+			}
+
+			if (!Services.SeenIcons.Contains(iconId))
+			{
+				Services.SeenIcons.Add(iconId);
+				Services.SeenIcons.Save();
 			}
 
 			if (Services.Config.ResizeOffMapIcons && offScreenArrow is not null)
