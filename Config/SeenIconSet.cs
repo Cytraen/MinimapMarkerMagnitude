@@ -18,7 +18,16 @@ public class SeenIconSet : HashSet<int>
 		else
 		{
 			Services.SeenIcons = new SeenIconSet();
-			Services.SeenIcons.Save();
+		}
+		Services.SeenIcons.InitFromConfig();
+		Services.SeenIcons.Save();
+	}
+
+	internal void InitFromConfig()
+	{
+		foreach (var icon in Services.Config.IconGroups.SelectMany(x => x.GroupIconIds, (_, iconId) => iconId))
+		{
+			Add(icon);
 		}
 	}
 

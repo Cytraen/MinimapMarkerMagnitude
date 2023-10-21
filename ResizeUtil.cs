@@ -7,6 +7,7 @@ internal static class ResizeUtil
 	internal static void CompileIconSizes()
 	{
 		Services.CompiledSizeOverrides = Services.Config.IconGroups
+			.Where(x => x.Enabled)
 			.SelectMany(x => x.GroupIconIds, (group, iconId) => new { iconId, group.GroupScale })
 			.GroupBy(x => x.iconId)
 			.ToDictionary(x => x.First().iconId, x => x.First().GroupScale);
@@ -48,6 +49,10 @@ internal static class ResizeUtil
 
 			if (!Services.SeenIcons.Contains(iconId))
 			{
+				if (iconId > 200_000)
+				{
+					Services.PluginLog.Warning($"Found iconId {iconId} over 200,000");
+				}
 				Services.SeenIcons.Add(iconId);
 				Services.SeenIcons.Save();
 			}

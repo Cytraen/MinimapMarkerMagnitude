@@ -75,7 +75,7 @@ internal sealed class Plugin : IDalamudPlugin
 		}
 		catch (Exception ex)
 		{
-			Services.PluginLog.Error(ex, "An error occurred when handling a AddonNaviMap_Update.");
+			Services.PluginLog.Error(ex, "An error occurred when handling _NaviMap PostUpdate.");
 			Disable();
 		}
 	}

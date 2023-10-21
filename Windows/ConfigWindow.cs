@@ -1,5 +1,4 @@
 using Dalamud.Interface;
-using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using MinimapMarkerMagnitude.Config;
@@ -88,12 +87,10 @@ internal class ConfigWindow : Window, IDisposable
 
 		ImGui.SameLine();
 		ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 60);
-		ImGui.Text("Hide Selected Icons:");
-		ImGui.SameLine();
-		ImGui.Checkbox("##ShowSelected", ref _hideSelectedIcons);
-		ImGuiComponents.HelpMarker(
-			"This will hide icons that are already part of this group." +
-			"\nIcons from other groups are always hidden, because an icon cannot belong to more than one group.");
+		ImGui.Checkbox("Hide Selected Icons", ref _hideSelectedIcons);
+		if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+			ImGui.SetTooltip("This will hide icons that are already part of this group." +
+							 "\nIcons from other groups are always hidden, because an icon cannot belong to more than one group.");
 
 		ImGui.SameLine();
 		ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 60);
@@ -111,11 +108,9 @@ internal class ConfigWindow : Window, IDisposable
 		{
 			ImGui.BeginDisabled();
 			ImGui.Button("Delete Icon Group");
-			if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-			{
-				ImGui.SetTooltip("Hold CTRL+SHIFT to allow deletion");
-			}
 			ImGui.EndDisabled();
+			if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+				ImGui.SetTooltip("Hold CTRL+SHIFT to allow deletion");
 		}
 
 		if (ImGui.BeginChild("ScrollableSection", ImGui.GetContentRegionAvail(), false, ImGuiWindowFlags.NoMove))
@@ -123,7 +118,14 @@ internal class ConfigWindow : Window, IDisposable
 			var rowItems = 0;
 			var itemsPerRow = (int)MathF.Floor(ImGui.GetContentRegionMax().X / (66 + ImGui.GetStyle().ItemSpacing.X));
 
-			foreach (var iconId in _sortIconsById ? Services.SeenIcons.OrderBy(x => x) : Services.SeenIcons.Reverse())
+			var unassignedIcons = Services.SeenIcons
+				.Where(x => !Services.Config.IconGroups
+					.SelectMany(y => y.GroupIconIds, (_, iconId) => iconId)
+					.Contains(x) || group.GroupIconIds.Contains(x));
+
+			unassignedIcons = _sortIconsById ? unassignedIcons.OrderBy(x => x) : unassignedIcons.Reverse();
+
+			foreach (var iconId in unassignedIcons)
 			{
 				if (Services.CompiledSizeOverrides.ContainsKey(iconId) &&
 					(!group.GroupIconIds.Contains(iconId) || _hideSelectedIcons))
@@ -140,6 +142,8 @@ internal class ConfigWindow : Window, IDisposable
 					new Vector2(1, 1),
 					new Vector4(1, 1, 1, 1),
 					selected ? new Vector4(0, 1, 0, 1) : new Vector4(1, 1, 1, 1));
+
+				if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetTooltip(iconId.ToString());
 
 				if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
 				{
@@ -208,6 +212,10 @@ internal class ConfigWindow : Window, IDisposable
 			changed = true;
 		}
 
+		if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+			ImGui.SetTooltip(
+				"This affects icons that are anchored to the edge of the minimap.\nFor example, quests in progress that have objectives on the map you're on but are out of minimap range.");
+
 		ImGui.SameLine();
 		ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X * 0.3f);
 		ImGui.Text("Off-map Marker Scalar:");
@@ -234,27 +242,38 @@ internal class ConfigWindow : Window, IDisposable
 
 		ImGui.PopFont();
 
-		if (ImGui.BeginTable("test", 3, tableFlags))
+		if (ImGui.BeginTable("test", 4, tableFlags))
 		{
 			ImGui.AlignTextToFramePadding();
 			ImGui.TableSetupColumn("Icon Group", ImGuiTableColumnFlags.WidthStretch, 0, 0);
 			ImGui.TableSetupColumn("Group Scale", ImGuiTableColumnFlags.WidthFixed, 80, 1);
-			ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 60, 2);
+			ImGui.TableSetupColumn("Enabled", ImGuiTableColumnFlags.WidthFixed, 60, 2);
+			ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 60, 3);
 
 			ImGui.TableHeadersRow();
 
 			for (var i = 0; i < Services.Config.IconGroups.Count; i++)
 			{
 				var group = Services.Config.IconGroups[i];
+				var groupEnabled = group.Enabled;
 				ImGui.PushID(i);
 				ImGui.TableNextRow();
+
 				ImGui.TableSetColumnIndex(0);
 				ImGui.Text(group.GroupName);
-				ImGui.TableSetColumnIndex(1);
-				ImGui.Text(((float)(Math.Pow(group.GroupScale, 2f) * 100f)).ToString("###.#\\%\\%",
-					CultureInfo.CurrentCulture));
-				ImGui.TableSetColumnIndex(2);
 
+				ImGui.TableSetColumnIndex(1);
+				ImGui.Text(((float)(Math.Pow(group.GroupScale, 2f) * 100f)).ToString(@"###.#\%\%",
+					CultureInfo.CurrentCulture));
+
+				ImGui.TableSetColumnIndex(2);
+				if (ImGui.Checkbox("", ref groupEnabled))
+				{
+					Services.Config.IconGroups[i].Enabled = groupEnabled;
+					changed = true;
+				}
+
+				ImGui.TableSetColumnIndex(3);
 				ImGui.PushFont(UiBuilder.IconFont);
 				if (ImGui.Button(FontAwesomeIcon.Edit.ToIconString())) _currentEditingGroup = i;
 				ImGui.PopFont();
