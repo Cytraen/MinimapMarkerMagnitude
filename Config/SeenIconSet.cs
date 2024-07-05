@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace MinimapMarkerMagnitude.Config;
 
-public class SeenIconSet : HashSet<int>
+public class SeenIconSet : HashSet<uint>
 {
 	private const string FileName = "SeenIcons.json";
 
@@ -17,7 +17,7 @@ public class SeenIconSet : HashSet<int>
 		}
 		else
 		{
-			Services.SeenIcons = new SeenIconSet();
+			Services.SeenIcons = [];
 		}
 		Services.SeenIcons.InitFromConfig();
 		Services.SeenIcons.Save();

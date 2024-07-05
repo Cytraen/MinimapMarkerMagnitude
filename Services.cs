@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -7,7 +8,7 @@ namespace MinimapMarkerMagnitude;
 
 internal sealed class Services
 {
-	[PluginService] public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
+	[PluginService] public static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
 
 	[PluginService] public static IClientState ClientState { get; private set; } = null!;
 
@@ -25,5 +26,5 @@ internal sealed class Services
 
 	public static SeenIconSet SeenIcons { get; internal set; } = null!;
 
-	public static Dictionary<int, float> CompiledSizeOverrides { get; internal set; } = null!;
+	public static FrozenDictionary<uint, float> CompiledSizeOverrides { get; internal set; } = null!;
 }

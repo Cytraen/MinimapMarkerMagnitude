@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace MinimapMarkerMagnitude;
@@ -10,7 +11,7 @@ internal static class ResizeUtil
 			.Where(x => x.Enabled)
 			.SelectMany(x => x.GroupIconIds, (group, iconId) => new { iconId, group.GroupScale })
 			.GroupBy(x => x.iconId)
-			.ToDictionary(x => x.First().iconId, x => x.First().GroupScale);
+			.ToFrozenDictionary(x => x.First().iconId, x => x.First().GroupScale);
 	}
 
 	internal static unsafe void ResizeIcons(bool reset = false)
@@ -31,7 +32,7 @@ internal static class ResizeUtil
 			var imageNode = iconNode->GetAsAtkImageNode();
 			if (imageNode is null) continue;
 
-			if (GetIconId(imageNode->PartsList->Parts[0].UldAsset) is not { } iconId || iconId == -1)
+			if (GetIconId(imageNode->PartsList->Parts[0].UldAsset) is not { } iconId || iconId == uint.MaxValue)
 			{
 				continue;
 			}
@@ -42,7 +43,7 @@ internal static class ResizeUtil
 				continue;
 			}
 
-			if (!componentNode->AtkResNode.IsVisible)
+			if (!componentNode->AtkResNode.IsVisible())
 			{
 				continue;
 			}
@@ -76,14 +77,14 @@ internal static class ResizeUtil
 		collisionNode->SetPositionFloat((1 - scale) * 16, (1 - scale) * 16);
 	}
 
-	private static unsafe int? GetIconId(AtkUldAsset* uldAsset)
+	private static unsafe uint? GetIconId(AtkUldAsset* uldAsset)
 	{
 		var res = uldAsset->AtkTexture.Resource;
 		if (res is null) return null;
-		return res->IconID;
+		return res->IconId;
 	}
 
-	internal static bool IsBannedIcon(int iconId) => iconId switch
+	internal static bool IsBannedIcon(uint iconId) => iconId switch
 	{
 		>= 60409 and <= 60411 => true,  // quest search areas
 		60457 => true,                  // map transition
@@ -92,7 +93,7 @@ internal static class ResizeUtil
 		_ => false,
 	};
 
-	private static float GetIconScale(int iconId)
+	private static float GetIconScale(uint iconId)
 	{
 		if (IsBannedIcon(iconId)) return 1.0f;
 		return Services.CompiledSizeOverrides.TryGetValue(iconId, out var size)

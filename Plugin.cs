@@ -14,7 +14,7 @@ internal sealed class Plugin : IDalamudPlugin
 	private readonly ConfigWindow _configWindow;
 	private readonly WindowSystem _windowSystem;
 
-	public Plugin(DalamudPluginInterface pluginInterface)
+	public Plugin(IDalamudPluginInterface pluginInterface)
 	{
 		pluginInterface.Create<Services>();
 		Configuration.Load();

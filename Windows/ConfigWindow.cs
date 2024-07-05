@@ -1,5 +1,8 @@
 using Dalamud.Interface;
+using Dalamud.Interface.Textures;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
+using Dalamud.Plugin.Services;
 using ImGuiNET;
 using MinimapMarkerMagnitude.Config;
 using System.Globalization;
@@ -13,8 +16,9 @@ internal class ConfigWindow : Window, IDisposable
 	private int? _currentEditingGroup;
 
 	private string _groupNameInput = string.Empty;
-	private bool _hideSelectedIcons;
+	private short _iconPreviewSize = (short)(Math.Round(ImGuiHelpers.GlobalScaleSafe, MidpointRounding.AwayFromZero) * 64f);
 	private bool _sortIconsById;
+	private bool _hideSelectedIcons;
 
 	internal ConfigWindow(Plugin plugin) : base(
 		"Minimap Marker Magnitude Settings",
@@ -73,9 +77,25 @@ internal class ConfigWindow : Window, IDisposable
 			changed = true;
 		}
 
+		ImGui.Text("Icon Preview Size:");
+		ImGui.SameLine();
+		ImGui.SetNextItemWidth(60);
+		if (ImGui.BeginCombo("##IconPreviewSelector", _iconPreviewSize + "x"))
+		{
+			if (ImGui.Selectable(32 + "x")) _iconPreviewSize = 32;
+			if (ImGui.Selectable(64 + "x")) _iconPreviewSize = 64;
+			if (ImGui.Selectable(128 + "x")) _iconPreviewSize = 128;
+			if (ImGui.Selectable(192 + "x")) _iconPreviewSize = 192;
+			if (ImGui.Selectable(256 + "x")) _iconPreviewSize = 256;
+
+			ImGui.EndCombo();
+		}
+
+		ImGui.SameLine();
+
 		ImGui.Text("Sort Order:");
 		ImGui.SameLine();
-		ImGui.SetNextItemWidth(120);
+		ImGui.SetNextItemWidth(120 * ImGuiHelpers.GlobalScale);
 		if (ImGui.BeginCombo("##Sorting", _sortIconsById ? "Internal Icon ID" : "Newest First"))
 		{
 			if (ImGui.Selectable("Newest First")) _sortIconsById = false;
@@ -86,14 +106,14 @@ internal class ConfigWindow : Window, IDisposable
 		}
 
 		ImGui.SameLine();
-		ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 60);
+		ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 20);
 		ImGui.Checkbox("Hide Selected Icons", ref _hideSelectedIcons);
 		if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
 			ImGui.SetTooltip("This will hide icons that are already part of this group." +
 							 "\nIcons from other groups are always hidden, because an icon cannot belong to more than one group.");
 
 		ImGui.SameLine();
-		ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 60);
+		ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 20);
 
 		if (ImGui.IsKeyDown(ImGuiKey.ModCtrl) && ImGui.IsKeyDown(ImGuiKey.ModShift))
 		{
@@ -116,7 +136,7 @@ internal class ConfigWindow : Window, IDisposable
 		if (ImGui.BeginChild("ScrollableSection", ImGui.GetContentRegionAvail(), false, ImGuiWindowFlags.NoMove))
 		{
 			var rowItems = 0;
-			var itemsPerRow = (int)MathF.Floor(ImGui.GetContentRegionMax().X / (66 + ImGui.GetStyle().ItemSpacing.X));
+			var itemsPerRow = (int)MathF.Floor(ImGui.GetContentRegionMax().X / (_iconPreviewSize + 2 + ImGui.GetStyle().ItemSpacing.X));
 
 			var unassignedIcons = Services.SeenIcons
 				.Where(x => !Services.Config.IconGroups
@@ -127,17 +147,21 @@ internal class ConfigWindow : Window, IDisposable
 
 			foreach (var iconId in unassignedIcons)
 			{
-				if (Services.CompiledSizeOverrides.ContainsKey(iconId) &&
-					(!group.GroupIconIds.Contains(iconId) || _hideSelectedIcons))
+				if (group.GroupIconIds.Contains(iconId) && _hideSelectedIcons)
+				{
+					continue;
+				}
+
+				if (Services.CompiledSizeOverrides.ContainsKey(iconId) && !group.GroupIconIds.Contains(iconId))
 					continue;
 
-				var tex = Services.TextureProvider.GetIcon((uint)iconId);
-				if (tex is null) continue;
+				var tex = Services.TextureProvider.GetFromGameIcon(new GameIconLookup(iconId)); ;
+				// if (tex is null) continue;
 
 				var selected = group.GroupIconIds.Contains(iconId);
 
-				ImGui.Image(tex.ImGuiHandle,
-					new Vector2(64, 64),
+				ImGui.Image(tex.GetWrapOrEmpty().ImGuiHandle,
+					new Vector2(_iconPreviewSize, _iconPreviewSize),
 					new Vector2(),
 					new Vector2(1, 1),
 					new Vector4(1, 1, 1, 1),
@@ -246,9 +270,9 @@ internal class ConfigWindow : Window, IDisposable
 		{
 			ImGui.AlignTextToFramePadding();
 			ImGui.TableSetupColumn("Icon Group", ImGuiTableColumnFlags.WidthStretch, 0, 0);
-			ImGui.TableSetupColumn("Group Scale", ImGuiTableColumnFlags.WidthFixed, 80, 1);
-			ImGui.TableSetupColumn("Enabled", ImGuiTableColumnFlags.WidthFixed, 60, 2);
-			ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 60, 3);
+			ImGui.TableSetupColumn("Group Scale", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Group Scale").X, 1);
+			ImGui.TableSetupColumn("Enabled", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Enabled").X, 2);
+			ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Actions").X, 3);
 
 			ImGui.TableHeadersRow();
 
