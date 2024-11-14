@@ -34,10 +34,7 @@ internal sealed class Plugin : IDalamudPlugin
 		Services.PluginInterface.UiBuilder.Draw += DrawUi;
 		Services.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUi;
 
-		Services.ClientState.Login += Enable;
-		Services.ClientState.Logout += Disable;
-
-		if (Services.ClientState.IsLoggedIn) Enable();
+		if (Services.Config.EnableResizing) Enable();
 	}
 
 	public void Dispose()
@@ -50,15 +47,11 @@ internal sealed class Plugin : IDalamudPlugin
 
 		Services.PluginInterface.UiBuilder.Draw -= DrawUi;
 		Services.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUi;
-
-		Services.ClientState.Login -= Enable;
-		Services.ClientState.Logout -= Disable;
 	}
 
 	internal void Enable()
 	{
-		if (Services.Config.EnableResizing)
-			Services.AddonLifecycle.RegisterListener(AddonEvent.PreUpdate, "_NaviMap", NaviMapPreUpdateListener);
+		Services.AddonLifecycle.RegisterListener(AddonEvent.PreUpdate, "_NaviMap", NaviMapPreUpdateListener);
 	}
 
 	internal void Disable()
