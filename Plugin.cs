@@ -26,15 +26,19 @@ internal sealed class Plugin : IDalamudPlugin
 		_configWindow = new ConfigWindow(this);
 		_windowSystem.AddWindow(_configWindow);
 
-		Services.CommandManager.AddHandler(ConfigWindowCommandName, new CommandInfo(OnConfigWindowCommand)
-		{
-			HelpMessage = "Opens the Minimap Marker Magnitude config window."
-		});
+		Services.CommandManager.AddHandler(
+			ConfigWindowCommandName,
+			new CommandInfo(OnConfigWindowCommand)
+			{
+				HelpMessage = "Opens the Minimap Marker Magnitude config window.",
+			}
+		);
 
 		Services.PluginInterface.UiBuilder.Draw += DrawUi;
 		Services.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUi;
 
-		if (Services.Config.EnableResizing) Enable();
+		if (Services.Config.EnableResizing)
+			Enable();
 	}
 
 	public void Dispose()
@@ -51,7 +55,11 @@ internal sealed class Plugin : IDalamudPlugin
 
 	internal void Enable()
 	{
-		Services.AddonLifecycle.RegisterListener(AddonEvent.PreUpdate, "_NaviMap", NaviMapPreUpdateListener);
+		Services.AddonLifecycle.RegisterListener(
+			AddonEvent.PreUpdate,
+			"_NaviMap",
+			NaviMapPreUpdateListener
+		);
 	}
 
 	internal void Disable()

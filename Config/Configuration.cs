@@ -1,5 +1,5 @@
-using Dalamud.Configuration;
 using System.Text.Json;
+using Dalamud.Configuration;
 
 namespace MinimapMarkerMagnitude.Config;
 
@@ -30,18 +30,17 @@ public class Configuration : IPluginConfiguration
 		}
 		else
 		{
-			Services.Config = new Configuration
-			{
-				IconGroups = DefaultIconGroups()
-			};
+			Services.Config = new Configuration { IconGroups = DefaultIconGroups() };
 			Services.Config.Save();
 		}
 	}
 
 	public void Save()
 	{
-		File.WriteAllText(Path.Combine(Services.PluginInterface.GetPluginConfigDirectory(), FileName),
-			JsonSerializer.Serialize(this, _serializerOptions));
+		File.WriteAllText(
+			Path.Combine(Services.PluginInterface.GetPluginConfigDirectory(), FileName),
+			JsonSerializer.Serialize(this, _serializerOptions)
+		);
 		ResizeUtil.CompileIconSizes();
 	}
 
@@ -55,11 +54,30 @@ public class Configuration : IPluginConfiguration
 				Enabled = false,
 				GroupIconIds =
 				[
-					60318, 60319, 60320, 60321, 60322, 60326, 60330, 60331, 60333, 60334, 60335, 60337, 60342, 60344,
-					60345, 60346, 60347, 60348, 60351, 60362, 60363, 60364
-				]
+					60318,
+					60319,
+					60320,
+					60321,
+					60322,
+					60326,
+					60330,
+					60331,
+					60333,
+					60334,
+					60335,
+					60337,
+					60342,
+					60344,
+					60345,
+					60346,
+					60347,
+					60348,
+					60351,
+					60362,
+					60363,
+					60364,
+				],
 			},
-
 			new MinimapIconGroup
 			{
 				GroupName = "FATEs",
@@ -67,80 +85,156 @@ public class Configuration : IPluginConfiguration
 				GroupIconIds =
 				[
 					60458,
-					60501, 60502, 60503, 60504, 60505, 60506, 60508,
-					60511, 60512, 60513, 60514, 60515
-				]
+					60501,
+					60502,
+					60503,
+					60504,
+					60505,
+					60506,
+					60508,
+					60511,
+					60512,
+					60513,
+					60514,
+					60515,
+				],
 			},
-
 			new MinimapIconGroup
 			{
 				GroupName = "Main Scenario Quests",
 				Enabled = false,
 				GroupIconIds =
 				[
-					70961, 70962, 70963, 70964,
-					71001, 71002, 71003, 71004, 71005, 71006,
-					71011, 71012, 71013, 71014, 71015, 71016
-				]
+					70961,
+					70962,
+					70963,
+					70964,
+					71001,
+					71002,
+					71003,
+					71004,
+					71005,
+					71006,
+					71011,
+					71012,
+					71013,
+					71014,
+					71015,
+					71016,
+				],
 			},
-
 			new MinimapIconGroup
 			{
 				GroupName = "Feature/Job Quests",
 				Enabled = false,
 				GroupIconIds =
 				[
-					70971, 70972, 70973, 70974, 70975, 70976,
-					71141, 71142, 71143, 71144, 71145, 71146,
-					71151, 71152, 71153, 71154, 71155, 71156
-				]
+					70971,
+					70972,
+					70973,
+					70974,
+					70975,
+					70976,
+					71141,
+					71142,
+					71143,
+					71144,
+					71145,
+					71146,
+					71151,
+					71152,
+					71153,
+					71154,
+					71155,
+					71156,
+				],
 			},
-
 			new MinimapIconGroup
 			{
 				GroupName = "Side Quests",
 				Enabled = false,
 				GroupIconIds =
 				[
-					70965, 70966, 70967, 70968, 70969, 70970,
-					71021, 71022, 71023, 71024, 71025, 71026,
-					71031, 71032, 71033, 71034, 71035, 71036
-				]
+					70965,
+					70966,
+					70967,
+					70968,
+					70969,
+					70970,
+					71021,
+					71022,
+					71023,
+					71024,
+					71025,
+					71026,
+					71031,
+					71032,
+					71033,
+					71034,
+					71035,
+					71036,
+				],
 			},
-
 			new MinimapIconGroup
 			{
 				GroupName = "Levequests",
 				Enabled = false,
 				GroupIconIds =
 				[
-					71041, 71042, 71043, 71044, 71045, 71046,
-					71051, 71052, 71053, 71054, 71055, 71056
-				]
+					71041,
+					71042,
+					71043,
+					71044,
+					71045,
+					71046,
+					71051,
+					71052,
+					71053,
+					71054,
+					71055,
+					71056,
+				],
 			},
-
 			new MinimapIconGroup
 			{
 				GroupName = "Guildhests",
 				Enabled = false,
 				GroupIconIds =
 				[
-					71081, 71082, 71083, 71084, 71085, 71086,
-					71091, 71092, 71093, 71094, 71095, 71096
-				]
+					71081,
+					71082,
+					71083,
+					71084,
+					71085,
+					71086,
+					71091,
+					71092,
+					71093,
+					71094,
+					71095,
+					71096,
+				],
 			},
-
 			new MinimapIconGroup
 			{
 				GroupName = "Hall of the Novice Quests",
 				Enabled = false,
 				GroupIconIds =
 				[
-					71121, 71122, 71123, 71124, 71125, 71126,
-					71131, 71132, 71133, 71134, 71135, 71136
-				]
+					71121,
+					71122,
+					71123,
+					71124,
+					71125,
+					71126,
+					71131,
+					71132,
+					71133,
+					71134,
+					71135,
+					71136,
+				],
 			},
-
 			new MinimapIconGroup
 			{
 				// TODO better name
@@ -148,17 +242,26 @@ public class Configuration : IPluginConfiguration
 				Enabled = false,
 				GroupIconIds =
 				[
-					71061, 71062, 71063, 71064, 71065, 71066,
-					71071, 71072, 71073, 71074, 71075, 71076
-				]
+					71061,
+					71062,
+					71063,
+					71064,
+					71065,
+					71066,
+					71071,
+					71072,
+					71073,
+					71074,
+					71075,
+					71076,
+				],
 			},
-
 			new MinimapIconGroup
 			{
 				GroupName = "Triple Triad & GATEs",
 				Enabled = false,
-				GroupIconIds = [71101, 71102, 71111, 71112, 71113]
-			}
+				GroupIconIds = [71101, 71102, 71111, 71112, 71113],
+			},
 		];
 	}
 }

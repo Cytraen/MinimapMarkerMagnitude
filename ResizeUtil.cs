@@ -7,8 +7,8 @@ internal static class ResizeUtil
 {
 	internal static void CompileIconSizes()
 	{
-		Services.CompiledSizeOverrides = Services.Config.IconGroups
-			.Where(x => x.Enabled)
+		Services.CompiledSizeOverrides = Services
+			.Config.IconGroups.Where(x => x.Enabled)
 			.SelectMany(x => x.GroupIconIds, (group, iconId) => new { iconId, group.GroupScale })
 			.GroupBy(x => x.iconId)
 			.ToFrozenDictionary(x => x.First().iconId, x => x.First().GroupScale);
@@ -17,22 +17,31 @@ internal static class ResizeUtil
 	internal static unsafe void ResizeIcons(bool reset = false)
 	{
 		var unitBase = (AtkUnitBase*)Services.GameGui.GetAddonByName("_NaviMap");
-		if (unitBase is null || unitBase->UldManager.NodeListCount < 19) return;
+		if (unitBase is null || unitBase->UldManager.NodeListCount < 19)
+			return;
 		var iconNodeList = unitBase->GetNodeById(18)->GetAsAtkComponentNode();
 
 		for (var i = 0; i < iconNodeList->Component->UldManager.NodeListCount; i++)
 		{
-			var componentNode = iconNodeList->Component->UldManager.NodeList[i]->GetAsAtkComponentNode();
-			if (componentNode is null) continue;
+			var componentNode = iconNodeList
+				->Component->UldManager.NodeList[i]
+				->GetAsAtkComponentNode();
+			if (componentNode is null)
+				continue;
 			var collisionNode = componentNode->Component->UldManager.SearchNodeById(7);
 			var offScreenArrow = componentNode->Component->GetImageNodeById(4);
 			var iconNode = componentNode->Component->GetImageNodeById(3);
 			var heightMarkerNode = componentNode->Component->GetImageNodeById(2);
-			if (collisionNode is null || iconNode is null || heightMarkerNode is null) continue;
+			if (collisionNode is null || iconNode is null || heightMarkerNode is null)
+				continue;
 			var imageNode = iconNode->GetAsAtkImageNode();
-			if (imageNode is null) continue;
+			if (imageNode is null)
+				continue;
 
-			if (GetIconId(imageNode->PartsList->Parts[0].UldAsset) is not { } iconId || iconId == uint.MaxValue)
+			if (
+				GetIconId(imageNode->PartsList->Parts[0].UldAsset) is not { } iconId
+				|| iconId == uint.MaxValue
+			)
 			{
 				continue;
 			}
@@ -60,7 +69,12 @@ internal static class ResizeUtil
 
 			if (Services.Config.ResizeOffMapIcons && offScreenArrow is not null)
 			{
-				SetScale(collisionNode, iconNode, heightMarkerNode, Services.Config.DefaultOffMapIconScalar * GetIconScale(iconId));
+				SetScale(
+					collisionNode,
+					iconNode,
+					heightMarkerNode,
+					Services.Config.DefaultOffMapIconScalar * GetIconScale(iconId)
+				);
 			}
 			else
 			{
@@ -69,7 +83,12 @@ internal static class ResizeUtil
 		}
 	}
 
-	private static unsafe void SetScale(AtkResNode* collisionNode, AtkResNode* iconNode, AtkResNode* heightMarkerNode, float scale)
+	private static unsafe void SetScale(
+		AtkResNode* collisionNode,
+		AtkResNode* iconNode,
+		AtkResNode* heightMarkerNode,
+		float scale
+	)
 	{
 		iconNode->SetScale(scale, scale);
 		heightMarkerNode->SetScale(scale, scale);
@@ -80,22 +99,26 @@ internal static class ResizeUtil
 	private static unsafe uint? GetIconId(AtkUldAsset* uldAsset)
 	{
 		var res = uldAsset->AtkTexture.Resource;
-		if (res is null) return null;
+		if (res is null)
+			return null;
 		return res->IconId;
 	}
 
-	internal static bool IsBannedIcon(uint iconId) => iconId switch
-	{
-		>= 60409 and <= 60411 => true,  // quest search areas
-		60457 => true,                  // map transition
-		>= 60495 and <= 60498 => true,  // more quest search areas
-		60566 => true,                  // another search area?
-		_ => false,
-	};
+	internal static bool IsBannedIcon(uint iconId) =>
+		iconId switch
+		{
+			>= 60409 and <= 60411 => true, // quest search areas
+			60457 => true, // map transition
+			>= 60495 and <= 60498 => true, // more quest search areas
+			60549 => true, // hexagonal search area?
+			60566 => true, // yet another search area?
+			_ => false,
+		};
 
 	private static float GetIconScale(uint iconId)
 	{
-		if (IsBannedIcon(iconId)) return 1.0f;
+		if (IsBannedIcon(iconId))
+			return 1.0f;
 		return Services.CompiledSizeOverrides.TryGetValue(iconId, out var size)
 			? size
 			: Services.Config.DefaultMinimapIconScale;

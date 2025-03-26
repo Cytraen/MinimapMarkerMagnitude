@@ -25,7 +25,12 @@ public class SeenIconSet : HashSet<uint>
 
 	internal void InitFromConfig()
 	{
-		foreach (var icon in Services.Config.IconGroups.SelectMany(x => x.GroupIconIds, (_, iconId) => iconId))
+		foreach (
+			var icon in Services.Config.IconGroups.SelectMany(
+				x => x.GroupIconIds,
+				(_, iconId) => iconId
+			)
+		)
 		{
 			Add(icon);
 		}
@@ -33,7 +38,9 @@ public class SeenIconSet : HashSet<uint>
 
 	public void Save()
 	{
-		File.WriteAllText(Path.Combine(Services.PluginInterface.GetPluginConfigDirectory(), FileName),
-			JsonSerializer.Serialize(this));
+		File.WriteAllText(
+			Path.Combine(Services.PluginInterface.GetPluginConfigDirectory(), FileName),
+			JsonSerializer.Serialize(this)
+		);
 	}
 }
