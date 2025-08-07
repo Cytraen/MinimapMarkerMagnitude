@@ -8,6 +8,8 @@ using MinimapMarkerMagnitude.Windows;
 
 namespace MinimapMarkerMagnitude;
 
+// ReSharper disable once ClassNeverInstantiated.Global
+// ReSharper disable once UnusedType.Global
 internal sealed class Plugin : IDalamudPlugin
 {
 	private const string ConfigWindowCommandName = "/mmm";
@@ -46,7 +48,6 @@ internal sealed class Plugin : IDalamudPlugin
 		Disable();
 
 		_windowSystem.RemoveAllWindows();
-		_configWindow.Dispose();
 		Services.CommandManager.RemoveHandler(ConfigWindowCommandName);
 
 		Services.PluginInterface.UiBuilder.Draw -= DrawUi;

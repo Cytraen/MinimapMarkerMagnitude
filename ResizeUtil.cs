@@ -16,7 +16,7 @@ internal static class ResizeUtil
 
 	internal static unsafe void ResizeIcons(bool reset = false)
 	{
-		var unitBase = (AtkUnitBase*)Services.GameGui.GetAddonByName("_NaviMap");
+		var unitBase = (AtkUnitBase*)Services.GameGui.GetAddonByName("_NaviMap").Address;
 		if (unitBase is null || unitBase->UldManager.NodeListCount < 19)
 			return;
 		var iconNodeList = unitBase->GetNodeById(18)->GetAsAtkComponentNode();
@@ -28,18 +28,15 @@ internal static class ResizeUtil
 				->GetAsAtkComponentNode();
 			if (componentNode is null)
 				continue;
-			var collisionNode = componentNode->Component->UldManager.SearchNodeById(7);
-			var offScreenArrow = componentNode->Component->GetImageNodeById(4);
-			var iconNode = componentNode->Component->GetImageNodeById(3);
-			var heightMarkerNode = componentNode->Component->GetImageNodeById(2);
-			if (collisionNode is null || iconNode is null || heightMarkerNode is null)
-				continue;
-			var imageNode = iconNode->GetAsAtkImageNode();
-			if (imageNode is null)
+			var collisionNode = componentNode->Component->GetCollisionNodeById(7);
+			var offScreenArrowImgNode = componentNode->Component->GetImageNodeById(4);
+			var iconImgNode = componentNode->Component->GetImageNodeById(3);
+			var heightMarkerImgNode = componentNode->Component->GetImageNodeById(2);
+			if (collisionNode is null || iconImgNode is null || heightMarkerImgNode is null)
 				continue;
 
 			if (
-				GetIconId(imageNode->PartsList->Parts[0].UldAsset) is not { } iconId
+				GetIconId(iconImgNode->PartsList->Parts[0].UldAsset) is not { } iconId
 				|| iconId == uint.MaxValue
 			)
 			{
@@ -48,7 +45,7 @@ internal static class ResizeUtil
 
 			if (reset || IsBannedIcon(iconId))
 			{
-				SetScale(collisionNode, iconNode, heightMarkerNode, 1.0f);
+				SetScale(collisionNode, iconImgNode, heightMarkerImgNode, 1.0f);
 				continue;
 			}
 
@@ -67,26 +64,26 @@ internal static class ResizeUtil
 				Services.SeenIcons.Save();
 			}
 
-			if (Services.Config.ResizeOffMapIcons && offScreenArrow is not null)
+			if (Services.Config.ResizeOffMapIcons && offScreenArrowImgNode is not null)
 			{
 				SetScale(
 					collisionNode,
-					iconNode,
-					heightMarkerNode,
+					iconImgNode,
+					heightMarkerImgNode,
 					Services.Config.DefaultOffMapIconScalar * GetIconScale(iconId)
 				);
 			}
 			else
 			{
-				SetScale(collisionNode, iconNode, heightMarkerNode, GetIconScale(iconId));
+				SetScale(collisionNode, iconImgNode, heightMarkerImgNode, GetIconScale(iconId));
 			}
 		}
 	}
 
 	private static unsafe void SetScale(
-		AtkResNode* collisionNode,
-		AtkResNode* iconNode,
-		AtkResNode* heightMarkerNode,
+		AtkCollisionNode* collisionNode,
+		AtkImageNode* iconNode,
+		AtkImageNode* heightMarkerNode,
 		float scale
 	)
 	{

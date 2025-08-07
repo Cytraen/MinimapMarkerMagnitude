@@ -1,9 +1,8 @@
 using System.Text.Json;
-using Dalamud.Configuration;
 
 namespace MinimapMarkerMagnitude.Config;
 
-public class Configuration : IPluginConfiguration
+public sealed class Configuration
 {
 	private const string FileName = "Config.json";
 
@@ -46,6 +45,7 @@ public class Configuration : IPluginConfiguration
 
 	private static List<MinimapIconGroup> DefaultIconGroups()
 	{
+		// TODO: move this to an embedded JSON file
 		return
 		[
 			new MinimapIconGroup

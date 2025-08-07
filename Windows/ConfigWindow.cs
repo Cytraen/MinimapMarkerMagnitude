@@ -1,14 +1,15 @@
 using System.Globalization;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.Textures;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using ImGuiNET;
 using MinimapMarkerMagnitude.Config;
 
 namespace MinimapMarkerMagnitude.Windows;
 
-internal class ConfigWindow : Window, IDisposable
+internal sealed class ConfigWindow : Window
 {
 	private readonly Plugin _plugin;
 	private int? _currentEditingGroup;
@@ -30,11 +31,6 @@ internal class ConfigWindow : Window, IDisposable
 		SizeCondition = ImGuiCond.FirstUseEver;
 		Size = new(660, 360);
 		SizeConstraints = new WindowSizeConstraints { MinimumSize = new(660, 300) };
-	}
-
-	public void Dispose()
-	{
-		GC.SuppressFinalize(this);
 	}
 
 	public override void Draw()
@@ -205,12 +201,12 @@ internal class ConfigWindow : Window, IDisposable
 					)
 						continue;
 
-					var tex = Services.TextureProvider.GetFromGameIcon(new(iconId));
-
 					var selected = group.GroupIconIds.Contains(iconId);
+					var tex = Services.TextureProvider.GetFromGameIcon(new GameIconLookup(iconId));
+					using var wrap = tex.GetWrapOrEmpty();
 
 					ImGui.Image(
-						tex.GetWrapOrEmpty().ImGuiHandle,
+						wrap.Handle,
 						new(_iconPreviewSize, _iconPreviewSize),
 						new(),
 						new(1, 1),
@@ -219,7 +215,7 @@ internal class ConfigWindow : Window, IDisposable
 					);
 
 					if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-						ImGui.SetTooltip(iconId.ToString());
+						ImGui.SetTooltip(iconId.ToString(CultureInfo.InvariantCulture));
 
 					if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
 					{
@@ -274,7 +270,7 @@ internal class ConfigWindow : Window, IDisposable
 		}
 
 		ImGui.SameLine();
-		ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X * 0.3f + 10);
+		ImGui.SetCursorPosX((ImGui.GetContentRegionMax().X * 0.3f) + 10);
 		ImGui.Text("Default Marker Scale:");
 		ImGui.SameLine();
 		ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
@@ -335,7 +331,7 @@ internal class ConfigWindow : Window, IDisposable
 			if (table.Success)
 			{
 				ImGui.AlignTextToFramePadding();
-				ImGui.TableSetupColumn("Icon Group", ImGuiTableColumnFlags.WidthStretch, 0, 0);
+				ImGui.TableSetupColumn("Icon Group", ImGuiTableColumnFlags.WidthStretch);
 				ImGui.TableSetupColumn(
 					"Group Scale",
 					ImGuiTableColumnFlags.WidthFixed,
