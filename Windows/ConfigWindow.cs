@@ -149,15 +149,15 @@ internal sealed class ConfigWindow : Window
 		}
 		else
 		{
-			using (var disabled = ImRaii.Disabled())
+			using (ImRaii.Disabled())
 			{
-				if (disabled.Success)
-				{
-					ImGui.Button("Delete Icon Group");
-				}
+				ImGui.Button("Delete Icon Group");
 			}
+
 			if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+			{
 				ImGui.SetTooltip("Hold CTRL+SHIFT to allow deletion");
+			}
 		}
 
 		using (
